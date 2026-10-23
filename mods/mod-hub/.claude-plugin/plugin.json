@@ -1,0 +1,27 @@
+{
+  "name": "mod-hub",
+  "version": "0.1.0",
+  "description": "A bar above the prompt with your pinned mod commands, a /mod-manager pane to turn mods on and off and run their commands, and /hub: a live web control room for every mod.",
+  "author": {
+    "name": "Owen (THEROCKSSS)",
+    "url": "https://github.com/THEROCKSSS"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "port": {
+      "type": "number",
+      "title": "Hub port",
+      "description": "The local port the Mod Hub web app listens on.",
+      "default": 8796,
+      "min": 1024,
+      "max": 65535
+    },
+    "showBar": {
+      "type": "boolean",
+      "title": "Show the bar above the prompt",
+      "description": "The row of pinned commands and the Mods and Hub buttons. Off hides it; /mod-manager and /hub still work.",
+      "default": true
+    }
+  }
+}

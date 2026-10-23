@@ -1,0 +1,83 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Mod Hub: a warm, dark instrument panel. Amber is "on", sage is "pinned", brass is "waiting". */
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.17 0.008 70);
+  --foreground: oklch(0.93 0.012 85);
+  --card: oklch(0.21 0.01 70);
+  --card-foreground: oklch(0.93 0.012 85);
+  --popover: oklch(0.2 0.01 70);
+  --popover-foreground: oklch(0.93 0.012 85);
+  --primary: oklch(0.78 0.13 70);
+  --primary-foreground: oklch(0.2 0.03 60);
+  --secondary: oklch(0.26 0.012 70);
+  --secondary-foreground: oklch(0.9 0.012 85);
+  --muted: oklch(0.25 0.01 70);
+  --muted-foreground: oklch(0.68 0.015 80);
+  --accent: oklch(0.29 0.014 70);
+  --accent-foreground: oklch(0.95 0.012 85);
+  --destructive: oklch(0.64 0.19 28);
+  --border: oklch(0.32 0.012 70);
+  --input: oklch(0.34 0.012 70);
+  --ring: oklch(0.8 0.12 75);
+  --sage: oklch(0.78 0.08 165);
+  --brass: oklch(0.84 0.12 95);
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-code: "Cascadia Code", "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sage: var(--sage);
+  --color-brass: var(--brass);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, oklch(0.24 0.03 70 / 0.55), transparent 70%);
+    background-attachment: fixed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

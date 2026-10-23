@@ -1,0 +1,11 @@
+{
+  "name": "mod-logic",
+  "version": "0.1.0",
+  "description": "/mod-logic shows how every mod works: the events it hooks, the capabilities it calls (tagged by risk) and what it registers, as a live 2D graph that redraws as mods are edited, with 3D in the Mod Hub.",
+  "author": {
+    "name": "Owen (THEROCKSSS)",
+    "url": "https://github.com/THEROCKSSS"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}

@@ -1,0 +1,19 @@
+{
+  "name": "blast-radius-win",
+  "version": "0.2.3-win.1",
+  "description": "Windows fork of blast-radius: holds risky Bash and PowerShell commands (recursive deletes, force pushes, migrations), shows what they would change, and fails closed.",
+  "author": {
+    "name": "Hamza Zafar (fork for Windows)",
+    "url": "https://github.com/hamzafer/claude-code-mods"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "timeoutSeconds": {
+      "type": "number",
+      "title": "Auto-cancel after (seconds)",
+      "description": "How long a held command waits for Cancel or Proceed before it is cancelled. 0 waits forever.",
+      "default": 60,
+      "min": 0
+    }
+  }
+}
