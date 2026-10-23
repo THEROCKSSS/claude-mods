@@ -102,7 +102,12 @@
     "installedAt": "2026-10-23T21:29:58.074Z",
     "description": "Whether your Supabase memory is up or degraded, and how many writes wait in its queue, with each container and a targeted fix.",
     "enabled": true,
-    "commands": [],
+    "commands": [
+     {
+      "name": "memory-status",
+      "description": "Is the Supabase memory up? Each container, queued writes, and a fix"
+     }
+    ],
     "isSelf": false
    },
    {
@@ -185,7 +190,12 @@
     "installedAt": "2026-10-23T21:29:59.273Z",
     "description": "Spots new versions of your installed mods, shows the commits since you installed each, and updates one or all in a click.",
     "enabled": true,
-    "commands": [],
+    "commands": [
+     {
+      "name": "mod-updates",
+      "description": "New versions of your mods: what changed, and update in one click"
+     }
+    ],
     "isSelf": false
    },
    {
@@ -207,7 +217,12 @@
     "installedAt": "2026-10-23T21:30:00.262Z",
     "description": "/ports: every listening port, the project or container that owns it, and its Tailscale URL with a QR code to open it on your phone.",
     "enabled": true,
-    "commands": [],
+    "commands": [
+     {
+      "name": "ports",
+      "description": "What is listening on this machine, who owns it, and a QR code to open it on your phone"
+     }
+    ],
     "isSelf": false
    },
    {

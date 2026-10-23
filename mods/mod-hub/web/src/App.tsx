@@ -176,7 +176,7 @@ function Home({ state, view, highlight, search, onView, onHighlight, onRun, onTo
 
   return (
     <main className="flex flex-col gap-8 pt-8">
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]" aria-label="Overview">
+      <section className="grid gap-6 max-lg:grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]" aria-label="Overview">
         <div className="relative h-[340px] overflow-hidden rounded-2xl border bg-[radial-gradient(ellipse_at_center,oklch(0.22_0.02_70),oklch(0.16_0.008_70))]">
           <LoadGuard what="constellation">
           <Suspense fallback={<div className="grid h-full place-items-center text-sm text-muted-foreground">Drawing the constellation…</div>}>
@@ -275,7 +275,7 @@ function Home({ state, view, highlight, search, onView, onHighlight, onRun, onTo
         {shown.length === 0 ? (
           <Notice title="Nothing matches">{`No mod is ${FILTERS.find(f => f.value === view.filter)?.hint ?? "here"}${view.query ? ` and matches “${view.query}”` : ""}. Reset the view to see them all.`}</Notice>
         ) : (
-          <motion.div layout={!reduce} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          <motion.div layout={!reduce} className="grid gap-4 max-sm:grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence mode="popLayout">
               {shown.map((m, i) => (
                 <ModCard

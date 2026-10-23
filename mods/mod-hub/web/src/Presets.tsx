@@ -73,7 +73,7 @@ export function Presets({ state, act }: Props) {
       {state.presets.length === 0 ? (
         <div className="rounded-2xl border border-dashed p-10 text-center text-sm text-muted-foreground">No presets yet. Save your current setup above.</div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 max-md:grid-cols-1 md:grid-cols-2">
           <AnimatePresence mode="popLayout">
             {state.presets.map((p, i) => {
               const { flips, steps, missing } = plan(p, others)
@@ -193,7 +193,7 @@ function Editor({ preset, state, onClose, onSave }: { preset: Preset; state: Hub
 
         <section className="grid gap-2">
           <h4 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Mods · leave, or switch on or off when applied</h4>
-          <div className="grid gap-1.5 sm:grid-cols-2">
+          <div className="grid gap-1.5 max-sm:grid-cols-1 sm:grid-cols-2">
             {state.mods
               .filter(m => !m.isSelf)
               .map(m => {

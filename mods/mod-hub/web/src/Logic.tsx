@@ -118,7 +118,7 @@ export function Logic({ feed, focusId }: { feed: LogicFeed | null; focusId: stri
         )}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="grid gap-5 max-lg:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="relative h-[620px] overflow-hidden rounded-2xl border bg-[#1b1814]">
           {graph.nodes.length === 0 ? (
             <p className="grid h-full place-items-center text-sm text-muted-foreground">Nothing to draw with these filters.</p>

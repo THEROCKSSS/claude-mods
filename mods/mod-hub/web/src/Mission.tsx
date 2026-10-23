@@ -49,7 +49,7 @@ export function Mission({ feed }: { feed: MissionFeed | null }) {
         <Stat icon={<FileCode2 className="size-4" aria-hidden />} value={changed} label="files changed" />
       </dl>
 
-      <div className={`grid gap-5 ${isFull ? '' : 'xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]'}`}>
+      <div className={`grid gap-5 max-xl:grid-cols-1 ${isFull ? '' : 'xl:grid-cols-[minmax(0,420px)_minmax(0,1fr)]'}`}>
         {!isFull && (
           <section className="flex max-h-[720px] flex-col rounded-2xl border bg-card/60" aria-label="Who is doing what">
             <h3 className="border-b px-4 py-3 font-display text-lg font-semibold">Who</h3>
@@ -82,7 +82,7 @@ export function Mission({ feed }: { feed: MissionFeed | null }) {
             <img src={src} alt={`Code map of ${feed.files.length} files`} className="block h-auto w-full min-w-[720px]" />
           </div>
           {feed.files.length > 0 && (
-            <ul className="grid gap-1 px-1 text-xs sm:grid-cols-2">
+            <ul className="grid gap-1 px-1 text-xs max-sm:grid-cols-1 sm:grid-cols-2">
               {feed.files.map(f => (
                 <li key={f.path} className="flex items-baseline gap-2 truncate" title={f.path}>
                   <span className={`shrink-0 rounded px-1 font-mono text-[10px] uppercase ${f.changed ? 'bg-sage/15 text-sage' : f.act === 'read' ? 'bg-[#5aa9ff]/15 text-[#5aa9ff]' : 'bg-secondary text-muted-foreground'}`}>{f.changed ? 'changed' : f.act}</span>
