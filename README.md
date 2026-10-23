@@ -23,6 +23,10 @@ Then run `/reload-plugins` in Claude Code. Or ask your agent to *"install mod-hu
 
 On macOS or Linux, use hamzafer's original blast-radius and mission-control instead of the `-win` forks.
 
+## Updating
+
+After `claude plugin update` and `/reload-plugins`, a hub left running from the older version is shut down and replaced by itself, and mod-logic re-sends its graph to any hub that has not had it yet.
+
 ## How the hub stays safe
 
 The web page never runs anything. It queues a request, and the mod checks it against what this session actually has installed before running it. The server listens on `127.0.0.1` only, and every API call needs a token that only the served page knows. It refuses foreign `Host` and `Origin` headers, so another website can't drive it, even through DNS rebinding.
@@ -47,9 +51,9 @@ cd mods/mod-hub/web && npm ci && npm run build   # writes mods/mod-hub/app
 
 | Suite | Result |
 | --- | --- |
-| mod-hub | 9/9 |
-| mod-logic | 4/4 |
-| hub server | 7/7 |
+| mod-hub | 10/10 |
+| mod-logic | 5/5 |
+| hub server | 8/8 |
 | blast-radius-win | 20/20 |
 | mission-control-win | 7/9. The same 2 tests fail on unmodified upstream with this engine (terminal PNG path, band order). |
 

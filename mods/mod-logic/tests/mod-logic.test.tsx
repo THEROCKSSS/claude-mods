@@ -89,6 +89,27 @@ function engine(on: any, files: Record<string, string>) {
   return { clock, files }
 }
 
+describe('mod-logic and the hub', () => {
+  test('a hub that starts after the session gets the graph within 10 s, once', async ($, on) => {
+    const files: Record<string, string> = {
+      'C:/repo/mods/g/hooks/hooks.json': '{ "modules": ["./register.tsx"] }',
+      'C:/repo/mods/g/hooks/register.tsx': BAND,
+    }
+    const posts: any[] = []
+    const { clock } = engine(on, files)
+    on('http.fetch', (_$: any, e: any) => (posts.push(JSON.parse(e.init?.body ?? 'null')), { value: { status: 200, ok: true, headers: {}, text: '{"ok":true}' } }))
+    await $.session.start({ surface: 'desktop', isInteractive: true, cwd: 'C:\\repo' } as any)
+    await clock.advance(10)
+    expect(posts).toEqual([]) // no hub yet
+    files['C:/Users/me/.claude/mod-hub/server.json'] = JSON.stringify({ port: 8796, token: 't', pid: 7, startedAt: 'now' })
+    await clock.advance(10_000)
+    expect(posts).toHaveLength(1)
+    expect(posts[0].mods.map((m: any) => m.name)).toEqual(['g'])
+    await clock.advance(10_000)
+    expect(posts).toHaveLength(1) // the same hub is not sent it again
+  })
+})
+
 describe('mod-logic', () => {
   test('reads a folder marketplace mod from its source, and an edit there redraws its logic', async ($, on) => {
     const files: Record<string, string> = {
@@ -112,7 +133,8 @@ describe('mod-logic', () => {
     await pane.unmount()
     pane = await $.ui.mount(PANE as any)
     expect(await pane.find({ type: 'Text', text: /\$\.process\.run/ })).toBeDefined()
-    expect(await pane.find({ type: 'Text', text: /live: g changed .* \(hooks\/register\.tsx\)/ })).toBeDefined()
+    expect(await pane.find({ type: 'Text', text: /^g changed .* · hooks\/register\.tsx$/ })).toBeDefined()
+    expect(await pane.find({ type: 'Text', text: / JUST CHANGED / })).toBeDefined()
     expect(await pane.find({ type: 'Text', text: /no \.catch handler/ })).toBeDefined() // the fail-open warning
     await pane.press({ key: 'tab-map' })
     const map: any = await pane.find({ type: 'Svg' })

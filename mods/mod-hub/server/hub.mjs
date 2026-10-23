@@ -14,6 +14,9 @@ import { fileURLToPath } from 'node:url'
 
 const MAX_BODY = 1_000_000
 const MAX_ACTIONS = 200
+// Bumped whenever the API changes. The mod compares it with its own and replaces an older hub
+// left running from before an update, which would otherwise keep serving the old API.
+export const SERVER_VERSION = 2
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2', '.json': 'application/json', '.ico': 'image/x-icon' }
 
 export function parseArgs(argv) {
@@ -39,7 +42,7 @@ export function cleanAction(a) {
   return null
 }
 
-export function startHub({ port, dir, app, token = randomBytes(24).toString('hex'), writeInfo = true }) {
+export function startHub({ port, dir, app, token = randomBytes(24).toString('hex'), writeInfo = true, onShutdown = undefined }) {
   const appRoot = resolve(app)
   let state = null
   let stateAt = 0
@@ -82,7 +85,12 @@ export function startHub({ port, dir, app, token = randomBytes(24).toString('hex
     if (origin && !allowedOrigins.has(origin)) return send(res, 403, { error: 'foreign origin' })
 
     if (url.pathname.startsWith('/api/')) {
-      if (url.pathname === '/api/ping') return send(res, 200, { ok: true, app: 'mod-hub', pid: process.pid })
+      if (url.pathname === '/api/ping') return send(res, 200, { ok: true, app: 'mod-hub', pid: process.pid, version: SERVER_VERSION })
+      if (url.pathname === '/api/shutdown' && req.method === 'POST' && (req.headers['x-mod-hub-token'] ?? '') === token) {
+        send(res, 200, { ok: true, stopping: true })
+        setTimeout(() => (onShutdown ? onShutdown() : process.exit(0)), 50) // after the answer is out
+        return
+      }
       const given = req.headers['x-mod-hub-token'] ?? url.searchParams.get('token')
       if (given !== token) return send(res, 401, { error: 'token' })
 
@@ -169,7 +177,7 @@ export function startHub({ port, dir, app, token = randomBytes(24).toString('hex
     server.listen(port, '127.0.0.1', () => {
       if (writeInfo && dir) {
         mkdirSync(dir, { recursive: true })
-        writeFileSync(join(dir, 'server.json'), JSON.stringify({ port, host: '127.0.0.1', token, pid: process.pid, startedAt: new Date().toISOString() }, null, 2))
+        writeFileSync(join(dir, 'server.json'), JSON.stringify({ port, host: '127.0.0.1', token, pid: process.pid, version: SERVER_VERSION, startedAt: new Date().toISOString() }, null, 2))
       }
       ok({ server, token, close: () => new Promise(done => { for (const r of listeners) r.end(); server.close(() => done()) }) })
     })

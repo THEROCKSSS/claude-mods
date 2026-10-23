@@ -17,6 +17,12 @@ Four mods, all validated and tested. See README for what each does and AGENTS.md
 - **The forks:** blast-radius-win (fails closed, guards PowerShell) and mission-control-win (desktop Svg code map).
 - **mod-catalog was dropped** at Owen's request.
 
+## Since the first push (2026-10-23)
+
+- **Live run:** the real hub was exercised against a live session. State came in, an edit came through mod-logic into the hub's graph, and a pin set on the web reached the session in about 1 s.
+- **Two bugs fixed.** A hub left running across an update kept serving the old API, so the server is now versioned and mod-hub replaces an old one. The graph never reached a hub opened after the session started, so mod-logic now resends every 10 s to a hub that has not had it.
+- **Both panels redesigned:** title typography, a status or risk SVG strip, a toolbar card, cards that light on hover, and pill badges.
+
 ## Known gaps
 
 - mission-control-win: 2 of 9 tests fail, the same 2 as upstream on engine 2.1.308.

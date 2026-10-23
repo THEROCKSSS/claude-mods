@@ -36,15 +36,23 @@ type Root = { id: string; name: string; dir: string; enabled: boolean }
 let roots: Root[] = []
 let drafts: Root[] = [] // folders with a .claude-plugin/ that Claude wrote this session, not installed
 const timers = new Map<string, { cancel: () => void }>()
+let sentTo = '' // the hub (pid and start time) that already has the graph
+let beat: { cancel: () => void } | undefined
 
 export const register: Register = on => {
   roots = []
   drafts = []
+  sentTo = ''
 
   on('session.start', async ($, e, next) => {
     const r = await next(e)
     await $.command.register({ name: 'mod-logic', description: 'See how every mod works: what it hooks, calls and registers, as a live graph' }).catch(() => {})
     void readAll($).catch(() => {})
+    // A hub opened after this session started has no graph yet: check for one now and then.
+    beat?.cancel()
+    beat = $.clock.every(10_000, () => {
+      void pushIfNew($).catch(() => {})
+    })
     return r
   })
 
@@ -205,7 +213,7 @@ async function draftFor($: EngineInterface, path: string): Promise<Root | null> 
 
 // ── The hub ───────────────────────────────────────────────────────────────
 
-type Server = { port: number; token: string }
+type Server = { port: number; token: string; pid?: number; startedAt?: string }
 
 async function hub($: EngineInterface): Promise<Server | null> {
   const s = await readJson($, `${await configDir($)}/mod-hub/server.json`)
@@ -216,11 +224,19 @@ async function hub($: EngineInterface): Promise<Server | null> {
 async function push($: EngineInterface) {
   const s = await hub($)
   if (!s) return
-  await $.http.fetch(`http://127.0.0.1:${s.port}/api/graph`, {
+  const r = await $.http.fetch(`http://127.0.0.1:${s.port}/api/graph`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-mod-hub-token': s.token },
     body: JSON.stringify({ mods: await read($, logic), changed: await read($, changed) }),
   }).catch(() => null)
+  sentTo = r?.ok ? `${s.pid}:${s.startedAt}` : ''
+}
+
+// Sends the graph to a hub that has not had it: one started, or restarted, since the last send.
+async function pushIfNew($: EngineInterface) {
+  const s = await hub($)
+  if (!s || `${s.pid}:${s.startedAt}` === sentTo || (await read($, logic)).length === 0) return
+  await push($)
 }
 
 async function openIn3D($: EngineInterface) {
@@ -242,6 +258,31 @@ async function openIn3D($: EngineInterface) {
 export function ago(at: number, now: number) {
   const s = Math.max(0, Math.round((now - at) / 1000))
   return s < 60 ? `${s} s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : `${Math.round(s / 3600)} h ago`
+}
+
+// The strip under the pane's title: every capability call across the mods shown, split by risk.
+export function riskStrip(mods: ModLogic[]): string {
+  const W = 860
+  const H = 54
+  const totals = RISKS.map(r => ({ ...r, n: mods.reduce((sum, m) => sum + m.calls.filter(c => c.risk === r.value).reduce((s, c) => s + c.count, 0), 0) })).filter(r => r.n > 0)
+  const all = Math.max(1, totals.reduce((s, r) => s + r.n, 0))
+  const o = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Segoe UI, system-ui, sans-serif">`]
+  o.push(`<rect x="0" y="6" width="${W}" height="12" rx="6" fill="#2b2620"/>`)
+  let x = 0
+  totals.forEach((r, i) => {
+    const w = (r.n / all) * W
+    const isEdge = i === 0 || i === totals.length - 1
+    o.push(`<rect x="${x.toFixed(1)}" y="6" width="${Math.max(2, w - (i === totals.length - 1 ? 0 : 2)).toFixed(1)}" height="12" rx="${isEdge ? 6 : 1.5}" fill="${r.color}"><title>${r.label}: ${r.n} calls</title></rect>`)
+    x += w
+  })
+  let lx = 0
+  for (const r of totals.slice(0, 7)) {
+    o.push(`<circle cx="${lx + 5}" cy="40" r="4.5" fill="${r.color}"/>`)
+    o.push(`<text x="${lx + 15}" y="44.5" font-size="12.5" fill="#b9b1a2"><tspan font-weight="700" fill="#ece6da">${r.n}</tspan> ${r.label}</text>`)
+    lx += 34 + String(r.n).length * 7.5 + r.label.length * 6.1
+  }
+  o.push('</svg>')
+  return o.join('')
 }
 
 async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0]) {
@@ -266,63 +307,102 @@ async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui'][
   const graph = picked || !isShared ? kindsShown : sharedOnly(kindsShown)
   const hookCount = readable.reduce((n, m) => n + m.hooks.length, 0)
   const capCount = full.nodes.filter(n => n.kind === 'capability').length
+  const failOpen = readable.filter(isFailOpen)
+  const isFresh = last !== null && now - last.at < 30_000
+  const scope = picked ? readable.filter(m => m.id === picked) : readable
 
+  const pill = (key: string, text: string, bg: string) => (
+    <Text key={key} backgroundColor={bg} color="inverseText" weight="semibold" size="caption">
+      {` ${text} `}
+    </Text>
+  )
   const toggleKind = (k: NodeKind) => update($, kinds, ks => (ks.includes(k) ? ks.filter(x => x !== k) : [...ks, k]))
 
-  const head = (
-    <Box flexDirection="column">
-      <Box flexDirection="row" flexWrap="wrap" columnGap={1} alignItems="center">
-        <Text bold>{`${readable.length} mods · ${hookCount} hooks · ${capCount} capabilities`}</Text>
-        <Button key="tab-map" label="◇ Map" variant={view === 'map' ? 'primary' : undefined} onPress={() => update($, tab, () => 'map')} />
-        <Button key="tab-breakdown" label="☰ Breakdown" variant={view === 'breakdown' ? 'primary' : undefined} onPress={() => update($, tab, () => 'breakdown')} />
-        <Button key="three-d" label="◈ 2D/3D in Hub" onPress={() => openIn3D($)} />
-        <Button key="refresh" label="↻" plain dimColor onPress={() => readAll($)} />
-        <Button key="close" label="Close" plain dimColor role="dismiss" onPress={() => $.ui.close({ id: PANE })} />
+  const header = (
+    <Box flexDirection="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" columnGap={2}>
+      <Box flexDirection="column">
+        <Text size="title" weight="bold">
+          <Text color="claude">{'◇ '}</Text>
+          {'Mod Logic'}
+        </Text>
+        <Text size="footnote" dimColor>
+          {`${readable.length} mods · ${hookCount} hooks · ${capCount} capabilities${failOpen.length ? ` · ${failOpen.length} fail open` : ''}`}
+        </Text>
       </Box>
-      <Text dimColor wrap="truncate-end">
-        {last ? `✎ live: ${last.mod.replace(/@.*$/, '')} changed ${ago(last.at, now)} (${last.file})` : '✎ live: edit any mod and its logic redraws here'}
+      <Box flexDirection="row" columnGap={1} alignItems="center">
+        <Button key="three-d" label="◈ 2D / 3D in Hub" variant="primary" onPress={() => openIn3D($)} />
+        <Button key="refresh" label="↻" plain dimColor onPress={() => readAll($)} />
+        <Button key="close" label="✕" plain dimColor role="dismiss" onPress={() => $.ui.close({ id: PANE })} />
+      </Box>
+    </Box>
+  )
+
+  const live = (
+    <Box flexDirection="row" columnGap={1} alignItems="center">
+      {isFresh ? pill('live', '● LIVE', 'warning') : pill('live', '○ LIVE', 'inactive')}
+      <Text size="footnote" dimColor={!isFresh} wrap="truncate-end">
+        {last ? `${last.mod.replace(/@.*$/, '')} changed ${ago(last.at, now)} · ${last.file}` : 'edit any mod and its logic redraws here'}
       </Text>
     </Box>
   )
 
-  const controls = (
-    <Box flexDirection="row" flexWrap="wrap" columnGap={1} alignItems="center">
-      {Select && (
-        <Select
-          key="focus"
-          label="Mod"
-          options={[{ value: '', label: 'Every mod' }, ...readable.map(m => ({ value: m.id, label: m.name }))]}
-          value={picked}
-          onSelect={v => {
-            void update($, focus, () => v)
-            void update($, page, () => 0)
-          }}
-        />
+  const toolbar = (
+    <Box flexDirection="column" borderStyle="round" borderColor="inactive" paddingX={1} gap={1}>
+      <Box flexDirection="row" flexWrap="wrap" columnGap={1} alignItems="center">
+        <Button key="tab-map" label="◇ Map" variant={view === 'map' ? 'primary' : undefined} plain={view === 'map' ? undefined : true} onPress={() => update($, tab, () => 'map')} />
+        <Button key="tab-breakdown" label="☰ Breakdown" variant={view === 'breakdown' ? 'primary' : undefined} plain={view === 'breakdown' ? undefined : true} onPress={() => update($, tab, () => 'breakdown')} />
+        <Text dimColor>│</Text>
+        {Select && (
+          <Select
+            key="focus"
+            label="Mod"
+            options={[{ value: '', label: 'Every mod' }, ...readable.map(m => ({ value: m.id, label: m.name }))]}
+            value={picked}
+            onSelect={v => {
+              void update($, focus, () => v)
+              void update($, page, () => 0)
+            }}
+          />
+        )}
+        {view === 'map' && !picked && (
+          <Button key="shared" label={isShared ? '◎ Shared only' : '◉ Everything'} plain={isShared ? undefined : true} variant={isShared ? 'primary' : undefined} onPress={() => update($, shared, s => !s)} />
+        )}
+      </Box>
+      {view === 'map' && (
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} alignItems="center">
+          <Text size="caption" weight="semibold" dimColor>
+            SHOW
+          </Text>
+          {KINDS.map(k => (
+            <Button key={`kind-${k.value}`} label={`${shownKinds.includes(k.value) ? '☑' : '☐'} ${k.label}`} plain dimColor={!shownKinds.includes(k.value)} onPress={() => toggleKind(k.value)} />
+          ))}
+        </Box>
       )}
-      {view === 'map' && !picked && (
-        <Button key="shared" label={isShared ? '◎ Shared only' : '◉ Everything'} variant={isShared ? 'primary' : undefined} onPress={() => update($, shared, s => !s)} />
-      )}
-      {view === 'map' &&
-        KINDS.map(k => (
-          <Button key={`kind-${k.value}`} label={`${shownKinds.includes(k.value) ? '☑' : '☐'} ${k.label}`} plain dimColor={!shownKinds.includes(k.value)} onPress={() => toggleKind(k.value)} />
-        ))}
     </Box>
+  )
+
+  const top = (
+    <>
+      {header}
+      {live}
+      {Svg && <Svg key="risk" source={riskStrip(scope)} alt="Capability calls by risk" isInteractive />}
+      {toolbar}
+    </>
   )
 
   if (view === 'map') {
     return (
       <Box flexDirection="column" gap={1}>
-        {head}
-        {controls}
+        {top}
         {Svg ? (
-          <Svg key="map" source={graphSvg(graph, { width: 900, height: 560, focus: picked || undefined, changed: last && now - last.at < 30_000 ? last.mod : undefined })} alt={`Graph of ${graph.nodes.length} parts across ${readable.length} mods`} isInteractive />
+          <Box flexDirection="column" borderStyle="round" borderColor="inactive">
+            <Svg key="map" source={graphSvg(graph, { width: 900, height: 560, focus: picked || undefined, changed: isFresh ? last!.mod : undefined })} alt={`Graph of ${graph.nodes.length} parts across ${readable.length} mods`} isInteractive />
+          </Box>
         ) : (
           <Text dimColor>This surface draws no pictures. ☰ Breakdown has the same in words, and ◈ opens the 3D view.</Text>
         )}
-        <Text dimColor wrap="wrap">
-          {'● mods  ◯ events  ■ capabilities by risk: '}
-          {RISKS.filter(r => r.value !== 'other').map(r => r.label).join(' · ')}
-          {'  ·  hover a shape for who uses it'}
+        <Text size="caption" dimColor wrap="wrap">
+          {'● mods on the ring  ◯ events they hook  ■ capabilities, coloured by risk  ·  hover any shape for who uses it'}
         </Text>
       </Box>
     )
@@ -333,50 +413,79 @@ async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui'][
   const p = Math.min(at, pages - 1)
   return (
     <Box flexDirection="column" gap={1}>
-      {head}
-      {controls}
-      {mods.slice(p * PER_PAGE, (p + 1) * PER_PAGE).map(m => (
-        <Box key={`logic-${m.id}`} flexDirection="column" borderStyle="round" borderColor={last?.mod === m.id && now - last.at < 30_000 ? 'yellow' : undefined} borderDimColor={last?.mod !== m.id} paddingX={1}>
-          <Text>
-            <Text bold>{m.name}</Text>
-            <Text dimColor>{m.error ? `  ${m.error}` : `  ${m.lines} lines in ${m.files.length} file${m.files.length === 1 ? '' : 's'}${m.enabled ? '' : ' · off'}`}</Text>
-          </Text>
-          {!m.error && (
-            <>
-              <Text wrap="wrap">
-                <Text color="#7fb8a4">{'hooks  '}</Text>
-                <Text dimColor>{m.hooks.length ? m.hooks.map(h => `${h.event}${h.matcher ? ` · ${h.matcher}` : ''}${h.count > 1 ? ` ×${h.count}` : ''}`).join(',  ') : 'none'}</Text>
+      {top}
+      {mods.slice(p * PER_PAGE, (p + 1) * PER_PAGE).map(m => {
+        const isLive = isFresh && last!.mod === m.id
+        return (
+          <Box
+            key={`logic-${m.id}`}
+            flexDirection="column"
+            borderStyle="round"
+            borderColor={isLive ? 'warning' : isFailOpen(m) ? 'error' : 'inactive'}
+            hover={{ borderColor: 'claude' }}
+            paddingX={1}
+          >
+            <Box flexDirection="row" justifyContent="space-between" alignItems="center" columnGap={1}>
+              <Text wrap="truncate-end">
+                <Text size="heading" weight="semibold" dimColor={!m.enabled}>
+                  {m.name}
+                </Text>
+                <Text size="footnote" mono dimColor>{m.error ? '' : `  ${m.lines} lines · ${m.files.length} file${m.files.length === 1 ? '' : 's'}`}</Text>
               </Text>
-              <Text wrap="wrap">
-                <Text color="#9aa7c7">{'calls  '}</Text>
-                {m.calls.length === 0 && <Text dimColor>none</Text>}
-                {m.calls.map((c, i) => (
-                  <Text key={`call-${c.name}`} color={RISKS.find(r => r.value === c.risk)?.color}>
-                    {`${i ? ',  ' : ''}$.${c.name}${c.count > 1 ? ` ×${c.count}` : ''}`}
+              <Box flexDirection="row" columnGap={1}>
+                {isLive && pill(`chg-${m.id}`, 'JUST CHANGED', 'warning')}
+                {!m.enabled && pill(`off-${m.id}`, 'OFF', 'inactive')}
+                {m.guards > 0 && pill(`guard-${m.id}`, 'FAILS CLOSED', 'success')}
+              </Box>
+            </Box>
+            {m.error ? (
+              <Text size="footnote" dimColor italic>
+                {m.error}
+              </Text>
+            ) : (
+              <>
+                <Text size="footnote" wrap="wrap">
+                  <Text color="#7fb8a4" weight="semibold">{'HOOKS  '}</Text>
+                  <Text dimColor>{m.hooks.length ? m.hooks.map(h => `${h.event}${h.matcher ? ` · ${h.matcher}` : ''}${h.count > 1 ? ` ×${h.count}` : ''}`).join('   ') : 'none'}</Text>
+                </Text>
+                <Text size="footnote" wrap="wrap">
+                  <Text color="#9aa7c7" weight="semibold">{'CALLS  '}</Text>
+                  {m.calls.length === 0 && <Text dimColor>none</Text>}
+                  {m.calls.map((c, i) => (
+                    <Text key={`call-${c.name}`} color={RISKS.find(r => r.value === c.risk)?.color} mono>
+                      {`${i ? '   ' : ''}$.${c.name}${c.count > 1 ? ` ×${c.count}` : ''}`}
+                    </Text>
+                  ))}
+                </Text>
+                {(m.commands.length > 0 || m.tools.length > 0 || m.state.length > 0) && (
+                  <Text size="footnote" dimColor wrap="wrap">
+                    {[m.commands.length ? `COMMANDS ${m.commands.map(c => `/${c}`).join(' ')}` : '', m.tools.length ? `TOOLS ${m.tools.join(' ')}` : '', m.state.length ? `STATE ${m.state.join(' ')}` : ''].filter(Boolean).join('     ')}
                   </Text>
-                ))}
-              </Text>
-              {(m.commands.length > 0 || m.tools.length > 0 || m.state.length > 0) && (
-                <Text dimColor wrap="wrap">
-                  {[m.commands.length ? `commands ${m.commands.map(c => `/${c}`).join(' ')}` : '', m.tools.length ? `tools ${m.tools.join(' ')}` : '', m.state.length ? `state ${m.state.join(' ')}` : ''].filter(Boolean).join('   ·   ')}
-                </Text>
-              )}
-              {m.hooks.some(h => h.event === 'tool.call' || h.event === 'tool.check') && m.guards === 0 && !m.calls.every(c => c.risk === 'draws' || c.risk === 'state') && (
-                <Text color="yellow" wrap="wrap">
-                  ⚠ hooks tool calls with no .catch handler: if it throws, the call goes ahead unchecked
-                </Text>
-              )}
-            </>
-          )}
-        </Box>
-      ))}
+                )}
+                {isFailOpen(m) && (
+                  <Box borderStyle="round" borderColor="error" paddingX={1}>
+                    <Text size="footnote" color="error" wrap="wrap">
+                      ⚠ Fails open: it hooks tool calls with no .catch handler, so if it throws, the call goes ahead unchecked.
+                    </Text>
+                  </Box>
+                )}
+              </>
+            )}
+          </Box>
+        )
+      })}
       {pages > 1 && (
-        <Box flexDirection="row" justifyContent="space-between">
+        <Box flexDirection="row" justifyContent="space-between" alignItems="center">
           <Button key="prev" label="‹ Prev" plain dimColor={p === 0} onPress={() => update($, page, n => Math.max(0, n - 1))} />
-          <Text dimColor>{`${p + 1} of ${pages}`}</Text>
+          <Text size="footnote" dimColor tabular>{`page ${p + 1} of ${pages}`}</Text>
           <Button key="next" label="Next ›" plain dimColor={p >= pages - 1} onPress={() => update($, page, n => Math.min(pages - 1, n + 1))} />
         </Box>
       )}
     </Box>
   )
+}
+
+// A mod that hooks tool calls, does more than draw, and has no .catch handler: a throw lets the call through.
+export function isFailOpen(m: ModLogic): boolean {
+  return m.hooks.some(h => h.event === 'tool.call' || h.event === 'tool.check') && m.guards === 0 && !m.calls.every(c => c.risk === 'draws' || c.risk === 'state')
 }

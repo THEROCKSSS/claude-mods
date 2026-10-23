@@ -7,10 +7,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { after, before, test } from 'node:test'
 
-import { cleanAction, startHub } from './hub.mjs'
+import { cleanAction, SERVER_VERSION, startHub } from './hub.mjs'
 
 const PORT = 18796
 let hub, dir
+let stopped = 0
 
 function call(path, { method = 'GET', headers = {}, body } = {}) {
   return new Promise((ok, fail) => {
@@ -31,7 +32,7 @@ before(async () => {
   mkdirSync(app)
   writeFileSync(join(app, 'index.html'), '<meta name="mod-hub-token" content="__MOD_HUB_TOKEN__">hub')
   writeFileSync(join(dir, 'secret.txt'), 'outside')
-  hub = await startHub({ port: PORT, dir, app })
+  hub = await startHub({ port: PORT, dir, app, onShutdown: () => stopped++ })
 })
 after(() => hub.close())
 
@@ -88,6 +89,16 @@ test('the logic graph goes in and out, and needs the token', async () => {
   assert.equal((await call('/api/graph', { method: 'POST', headers: t, body: { nope: 1 } })).status, 400)
   assert.equal((await call('/api/graph', { method: 'POST', headers: t, body: { mods: [{ id: 'a@b', hooks: [] }], changed: { mod: 'a@b', file: 'x', at: 1 } } })).status, 200)
   assert.deepEqual((await call('/api/graph', { headers: t })).json().graph, { mods: [{ id: 'a@b', hooks: [] }], changed: { mod: 'a@b', file: 'x', at: 1 } })
+})
+
+test('ping says the server version; shutdown needs the token', async () => {
+  const ping = (await call('/api/ping')).json()
+  assert.equal(ping.version, SERVER_VERSION)
+  assert.equal((await call('/api/shutdown', { method: 'POST' })).status, 401)
+  assert.equal(stopped, 0)
+  assert.equal((await call('/api/shutdown', { method: 'POST', headers: { 'x-mod-hub-token': hub.token } })).status, 200)
+  await new Promise(done => setTimeout(done, 80))
+  assert.equal(stopped, 1)
 })
 
 test('cleanAction keeps only the four shapes', () => {

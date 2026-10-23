@@ -26,7 +26,7 @@ const COMMANDS = [
 const fwd = (p: string) => p.replace(/\\/g, '/')
 
 // Stands for the engine: a Windows home, the installed list, settings, a store, and a hub on 8796.
-function engine(on: any, hub: { actions: unknown[] } = { actions: [] }) {
+function engine(on: any, hub: { actions: unknown[]; version?: number; shutdowns?: number } = { actions: [] }) {
   const runs: string[][] = []
   const stdins: unknown[] = []
   const ran: { command: string; args?: string }[] = []
@@ -56,7 +56,8 @@ function engine(on: any, hub: { actions: unknown[] } = { actions: [] }) {
   on('process.run', (_$: any, e: any) => (runs.push(e.argv), stdins.push(e.init?.stdin), { value: { exitCode: 0, stdout: '', stderr: '' } }))
   on('ui.copy', () => ({ value: { isCopied: false, reason: 'no-clipboard' } })) // the desktop has no clipboard path yet
   on('http.fetch', (_$: any, e: any) => {
-    if (e.url.endsWith('/api/ping')) return { value: { status: 200, ok: true, headers: {}, text: '{"ok":true}' } }
+    if (e.url.endsWith('/api/ping')) return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify({ ok: true, app: 'mod-hub', pid: 1, version: hub.version ?? 2 }) } }
+    if (e.url.endsWith('/api/shutdown')) return (hub.shutdowns = (hub.shutdowns ?? 0) + 1, (hub.version = 2), { value: { status: 200, ok: true, headers: {}, text: '{"ok":true}' } })
     if (e.url.includes('/api/state')) return (posted.push(JSON.parse(e.init?.body ?? 'null')), { value: { status: 200, ok: true, headers: {}, text: '{}' } })
     if (e.url.includes('/api/actions')) {
       const after = Number(new URL(e.url).searchParams.get('after'))
@@ -189,6 +190,15 @@ describe('mod-hub', () => {
     expect(toasts).toContain('/snake is queued: it runs as soon as Claude finishes this turn')
     expect(ran.map(r => r.command)).toContain('snake') // handed to the engine, which runs it after the turn
     await bar.unmount()
+  })
+
+  test('a hub left running from an older version is shut down and started anew', async ($, on) => {
+    const hub = { actions: [] as unknown[], version: 1 }
+    const { runs, clock } = engine(on, hub)
+    await $.session.start({ surface: 'desktop', isInteractive: true, cwd: 'C:\\repo' } as any)
+    for (let i = 0; i < 8; i++) await clock.advance(300) // the connect at start runs in the background
+    expect((hub as any).shutdowns).toBe(1)
+    expect(runs.some(a => a[0] === 'powershell' && a.some(x => x.includes('hub.mjs')))).toBe(true) // the new server
   })
 
   test('hub actions: known commands run, unknown ones and itself are refused, pins are kept', async ($, on) => {

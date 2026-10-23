@@ -21,6 +21,7 @@ const TICK_MS = 1_500 // how often the hub is asked for actions while it runs
 const REFRESH_MS = 15_000 // how often installed plugins are read again
 const PINS_KEY = 'pins'
 const DEFAULT_PINS = ['mod-logic', 'mission']
+const SERVER_VERSION = 2 // server/hub.mjs SERVER_VERSION: a running hub below this is replaced
 
 const state = atom({ plugin: 'mod-hub', key: 'state' } as const, null as HubState | null)
 const hubUrl = atom({ plugin: 'mod-hub', key: 'hubUrl' } as const, '')
@@ -310,17 +311,48 @@ async function serverInfo($: EngineInterface): Promise<Server | null> {
   }
 }
 
-async function ping($: EngineInterface, s: Server): Promise<boolean> {
+// What a running hub says about itself; null when nothing answers as mod-hub.
+async function ping($: EngineInterface, s: Server): Promise<{ pid: number; version: number } | null> {
   const r = await $.http.fetch(`http://127.0.0.1:${s.port}/api/ping`, { headers: { 'x-mod-hub-token': s.token } }).catch(() => null)
-  return r?.status === 200 && /"ok":true/.test(r.text)
+  if (r?.status !== 200) return null
+  try {
+    const p = JSON.parse(r.text) as { ok?: boolean; app?: string; pid?: number; version?: number }
+    return p.ok && p.app === 'mod-hub' ? { pid: Number(p.pid ?? 0), version: Number(p.version ?? 1) } : null
+  } catch {
+    return null
+  }
 }
 
-// Finds a running hub and remembers its address; '' when none answers.
+// Finds a running hub and remembers its address; '' when none answers. A hub older than this
+// mod's server (left running across an update) is replaced, or it would keep serving the old API.
 async function connect($: EngineInterface): Promise<string> {
   const s = await serverInfo($)
-  const url = s && (await ping($, s)) ? `http://127.0.0.1:${s.port}/` : ''
+  let alive = s ? await ping($, s) : null
+  if (s && alive && alive.version < SERVER_VERSION) {
+    await replaceHub($, s, alive.pid)
+    alive = null
+    for (let i = 0; i < 20 && !alive; i++) {
+      await $.clock.sleep(250)
+      const fresh = await serverInfo($)
+      alive = fresh ? await ping($, fresh) : null
+    }
+  }
+  const info = alive ? await serverInfo($) : null
+  const url = info && alive ? `http://127.0.0.1:${info.port}/` : ''
   await update($, hubUrl, () => url)
   return url
+}
+
+// Stops an old hub (by /api/shutdown, or for one too old to have it, by its pid: only the pid that
+// answered as mod-hub and that server.json names) and starts this version's.
+async function replaceHub($: EngineInterface, s: Server, pid: number) {
+  const r = await $.http.fetch(`http://127.0.0.1:${s.port}/api/shutdown`, { method: 'POST', headers: { 'x-mod-hub-token': s.token } }).catch(() => null)
+  if (r?.status !== 200 && pid > 0 && pid === s.pid) {
+    const isWindows = /^[A-Za-z]:\//.test($.plugin.root.replace(/\\/g, '/'))
+    await $.process.run(isWindows ? ['taskkill', '/PID', String(pid), '/F'] : ['kill', String(pid)], { timeoutMs: 10_000 }).catch(() => null)
+  }
+  await $.clock.sleep(400) // the port frees once the old process is gone
+  await startServer($)
 }
 
 // Starts the hub when it is not running, waits for it to answer, and opens it in the browser.
@@ -461,11 +493,42 @@ export function since(iso: string, now: number): string {
   return `${Math.round(h / 24)} days ago`
 }
 
+// The strip under the pane's title: one rounded bar split into on, waiting on a reload, and off.
+export function statusStrip(on: number, changed: number, off: number): string {
+  const W = 860
+  const H = 54
+  const total = Math.max(1, on + changed + off)
+  const parts = [
+    { n: on, color: '#e3a857', label: 'on' },
+    { n: changed, color: '#e8d27a', label: 'waiting on a reload' },
+    { n: off, color: '#6b645a', label: 'off' },
+  ].filter(p => p.n > 0)
+  const o = [`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Segoe UI, system-ui, sans-serif">`]
+  o.push(`<rect x="0" y="6" width="${W}" height="12" rx="6" fill="#2b2620"/>`)
+  let x = 0
+  parts.forEach((p, i) => {
+    const w = (p.n / total) * W
+    const isFirst = i === 0
+    const isLast = i === parts.length - 1
+    o.push(`<rect x="${x.toFixed(1)}" y="6" width="${Math.max(2, w - (isLast ? 0 : 3)).toFixed(1)}" height="12" rx="${isFirst || isLast ? 6 : 2}" fill="${p.color}"/>`)
+    x += w
+  })
+  let lx = 0
+  for (const p of parts) {
+    o.push(`<circle cx="${lx + 5}" cy="40" r="4.5" fill="${p.color}"/>`)
+    o.push(`<text x="${lx + 15}" y="44.5" font-size="13" fill="#b9b1a2"><tspan font-weight="700" fill="#ece6da">${p.n}</tspan> ${p.label}</text>`)
+    lx += 36 + String(p.n).length * 7.8 + p.label.length * 6.3 // 13 px Segoe: digits bold, words regular
+  }
+  o.push('</svg>')
+  return o.join('')
+}
+
 async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0]) {
   const elements = $.ui.resolve(e)
   const { Box, Text, Button } = elements
   const Input = 'Input' in elements ? elements.Input : undefined
   const Select = 'Select' in elements ? elements.Select : undefined
+  const Svg = 'Svg' in elements ? elements.Svg : undefined
   const s = await read($, state)
   if (!s) return <Text dimColor>Reading your mods…</Text>
   const v = await read($, view)
@@ -486,12 +549,18 @@ async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui'][
   const p = Math.min(at, pages - 1)
   const on = s.mods.filter(m => m.enabled).length
   const markets = sources(s.mods)
+  const changedCount = s.pending.length
 
+  const pill = (key: string, text: string, bg: string) => (
+    <Text key={key} backgroundColor={bg} color="inverseText" weight="semibold" size="caption">
+      {` ${text} `}
+    </Text>
+  )
   const flip = (m: ModRow) =>
     m.isSelf ? (
-      <Text color="yellow">◈ always on</Text>
+      pill('self-on', '◈ ALWAYS ON', 'claude')
     ) : working === m.id ? (
-      <Text color="cyan">working…</Text>
+      <Text color="suggestion">switching…</Text>
     ) : (
       <Button key={`flip-${m.id}`} label={m.enabled ? '● On' : '○ Off'} variant={m.enabled ? 'primary' : undefined} onPress={() => toggle($, m.id, !m.enabled)} />
     )
@@ -507,126 +576,167 @@ async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui'][
         <Button key={`pin-${c.name}`} label={s.pins.includes(c.name) ? '★' : '☆'} plain dimColor={!s.pins.includes(c.name)} onPress={() => togglePin($, c.name)} />
       </Box>
     ))
-  const tags = (m: ModRow) => `  v${m.version} · @${m.marketplace}${isNew(m, now) ? ' · new' : ''}${s.pending.includes(m.id) ? ' · reload to apply' : ''}`
+  const badges = (m: ModRow) => [
+    m.isSelf ? pill(`b-self-${m.id}`, 'THIS MOD', 'claude') : null,
+    isNew(m, now) ? pill(`b-new-${m.id}`, 'NEW', 'success') : null,
+    s.pending.includes(m.id) ? pill(`b-chg-${m.id}`, 'RELOAD TO APPLY', 'warning') : null,
+  ]
 
   return (
     <Box flexDirection="column" gap={1}>
-      <Box flexDirection="row" flexWrap="wrap" columnGap={1} alignItems="center">
-        <Text bold>{`${s.mods.length} mods · ${on} on${s.pending.length ? ` · ${s.pending.length} waiting` : ''}`}</Text>
-        <Button key="hub" label={url ? '◈ Open Hub' : '◈ Start Hub'} onPress={() => void openHub($)} />
-        {s.pending.length > 0 && <Button key="reload" label={`↻ Reload to apply (${s.pending.length})`} variant="primary" onPress={() => reload($)} />}
-        <Button key="close" label="Close" plain dimColor role="dismiss" onPress={() => $.ui.close({ id: PANE })} />
+      {/* Header: the name, one line of status, and the pane's actions. */}
+      <Box flexDirection="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" columnGap={2}>
+        <Box flexDirection="column">
+          <Text size="title" weight="bold">
+            <Text color="claude">{'▣ '}</Text>
+            {'Mod Manager'}
+          </Text>
+          <Text size="footnote" dimColor>
+            {`${s.mods.length} installed · ${on} on${changedCount ? ` · ${changedCount} waiting on a reload` : ''}${url ? ' · hub running' : ''}`}
+          </Text>
+        </Box>
+        <Box flexDirection="row" columnGap={1} alignItems="center">
+          {changedCount > 0 && <Button key="reload" label={`↻ Reload · ${changedCount}`} variant="primary" onPress={() => reload($)} />}
+          <Button key="hub" label={url ? '◈ Open Hub' : '◈ Start Hub'} onPress={() => void openHub($)} />
+          <Button key="close" label="✕" plain dimColor role="dismiss" onPress={() => $.ui.close({ id: PANE })} />
+        </Box>
       </Box>
 
-      {Input && (
-        <Input
-          key="search"
-          placeholder="Search mods and commands: every word must match…"
-          value={v.query}
-          submitLabel="search"
-          onInput={q => setView($, { query: q })}
-          onSubmit={q => setView($, { query: q })}
+      {Svg && (
+        <Svg
+          key="strip"
+          source={statusStrip(
+            s.mods.filter(m => m.enabled && !s.pending.includes(m.id)).length,
+            changedCount,
+            s.mods.filter(m => !m.enabled && !s.pending.includes(m.id)).length,
+          )}
+          alt={`${on} of ${s.mods.length} mods on`}
         />
       )}
 
-      <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
-        {FILTERS.filter(f => f.value === 'all' || tally[f.value] > 0 || v.filter === f.value).map(f => (
-          <Button
-            key={`filter-${f.value}`}
-            label={`${f.label} ${tally[f.value]}`}
-            variant={v.filter === f.value ? 'primary' : undefined}
-            plain={v.filter === f.value ? undefined : true}
-            dimColor={v.filter !== f.value}
-            onPress={() => setView($, { filter: f.value })}
-          />
-        ))}
-      </Box>
-
-      <Box flexDirection="row" flexWrap="wrap" columnGap={2} alignItems="center">
-        {Select && <Select key="sort" label="Sort" options={SORTS} value={v.sort} onSelect={value => setView($, { sort: value as View['sort'] })} />}
-        {Select && markets.length > 1 && (
-          <Select
-            key="source"
-            label="From"
-            options={[{ value: '', label: 'Every marketplace' }, ...markets.map(m => ({ value: m, label: `@${m}` }))]}
-            value={v.source}
-            onSelect={value => setView($, { source: value })}
-          />
+      {/* Toolbar: search, filters and view settings in one card. */}
+      <Box flexDirection="column" borderStyle="round" borderColor="inactive" paddingX={1} gap={1}>
+        {Input && (
+          <Input key="search" placeholder="Search mods and commands…" value={v.query} submitLabel="search" onInput={q => setView($, { query: q })} onSubmit={q => setView($, { query: q })} />
         )}
-        <Button key="layout" label={isCompact ? '▦ Detailed' : '▤ Compact'} plain onPress={() => setCompact($, !isCompact)} />
-        <Button
-          key="click-mode"
-          label={mode === 'copy' ? 'Click: ⧉ Copy' : 'Click: ▶ Run'}
-          variant={mode === 'copy' ? 'primary' : undefined}
-          onPress={() => setClickMode($, mode === 'copy' ? 'run' : 'copy')}
-        />
-        {!isDefault(v) && <Button key="reset" label="✕ Reset view" plain dimColor onPress={() => setView($, { ...DEFAULT_VIEW })} />}
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1}>
+          {FILTERS.filter(f => f.value === 'all' || tally[f.value] > 0 || v.filter === f.value).map(f => (
+            <Button
+              key={`filter-${f.value}`}
+              label={`${f.label} ${tally[f.value]}`}
+              variant={v.filter === f.value ? 'primary' : undefined}
+              plain={v.filter === f.value ? undefined : true}
+              dimColor={v.filter !== f.value}
+              onPress={() => setView($, { filter: f.value })}
+            />
+          ))}
+        </Box>
+        <Box flexDirection="row" flexWrap="wrap" columnGap={2} alignItems="center">
+          {Select && <Select key="sort" label="Sort" options={SORTS} value={v.sort} onSelect={value => setView($, { sort: value as View['sort'] })} />}
+          {Select && markets.length > 1 && (
+            <Select
+              key="source"
+              label="From"
+              options={[{ value: '', label: 'Every marketplace' }, ...markets.map(m => ({ value: m, label: `@${m}` }))]}
+              value={v.source}
+              onSelect={value => setView($, { source: value })}
+            />
+          )}
+          <Button key="layout" label={isCompact ? '▦ Cards' : '▤ Compact'} plain onPress={() => setCompact($, !isCompact)} />
+          <Button key="click-mode" label={mode === 'copy' ? 'Click: ⧉ Copy' : 'Click: ▶ Run'} variant={mode === 'copy' ? 'primary' : undefined} onPress={() => setClickMode($, mode === 'copy' ? 'run' : 'copy')} />
+          {!isDefault(v) && <Button key="reset" label="✕ Reset" plain dimColor onPress={() => setView($, { ...DEFAULT_VIEW })} />}
+        </Box>
       </Box>
 
       {problem !== '' && (
-        <Box flexDirection="row" columnGap={1}>
-          <Text color="red" wrap="wrap">
+        <Box flexDirection="row" columnGap={1} borderStyle="round" borderColor="error" paddingX={1}>
+          <Text color="error" wrap="wrap">
             {problem}
           </Text>
           <Button key="dismiss-note" label="Dismiss" plain dimColor onPress={() => update($, note, () => '')} />
         </Box>
       )}
 
+      <Text size="caption" weight="semibold" dimColor>
+        {shown.length === 0 ? 'NOTHING SHOWN' : `SHOWING ${p * per + 1}–${Math.min(shown.length, (p + 1) * per)} OF ${shown.length}${shown.length < s.mods.length ? ` · ${s.mods.length} INSTALLED` : ''}`}
+      </Text>
+
       {shown.length === 0 && (
-        <Box flexDirection="row" columnGap={1}>
+        <Box flexDirection="column" alignItems="center" borderStyle="round" borderColor="inactive" paddingY={1}>
           <Text dimColor>{`No mod is ${FILTERS.find(f => f.value === v.filter)?.hint ?? 'here'}${v.query ? ` and matches "${v.query}"` : ''}.`}</Text>
-          <Button key="reset-empty" label="Show all" plain onPress={() => setView($, { ...DEFAULT_VIEW })} />
+          <Button key="reset-empty" label="Show all mods" plain onPress={() => setView($, { ...DEFAULT_VIEW })} />
         </Box>
       )}
 
       {isCompact ? (
-        <Box flexDirection="column">
+        <Box flexDirection="column" borderStyle="round" borderColor="inactive" paddingX={1}>
           {shown.slice(p * per, (p + 1) * per).map(m => (
             <Box key={`row-${m.id}`} flexDirection="row" columnGap={1} alignItems="center" flexWrap="wrap">
               {flip(m)}
-              <Text bold dimColor={!m.enabled} color={m.isSelf ? 'yellow' : undefined}>
-                {m.isSelf ? `◈ ${m.name} (this mod)` : m.name}
+              <Text weight="semibold" dimColor={!m.enabled} color={m.isSelf ? 'claude' : undefined}>
+                {m.isSelf ? `◈ ${m.name}` : m.name}
               </Text>
-              <Text dimColor>{tags(m)}</Text>
+              {badges(m)}
               {commandButtons(m)}
             </Box>
           ))}
         </Box>
       ) : (
         shown.slice(p * per, (p + 1) * per).map(m => (
-          <Box key={`mod-${m.id}`} flexDirection="column" borderStyle={m.isSelf ? 'double' : 'round'} borderDimColor={!m.enabled} borderColor={m.isSelf ? 'yellow' : m.enabled ? 'green' : undefined} paddingX={1}>
-            {m.isSelf && <Text color="yellow" bold>{'◈ THIS MOD · the Mod Manager you are using'}</Text>}
-            <Box flexDirection="row" justifyContent="space-between" alignItems="center">
+          <Box
+            key={`mod-${m.id}`}
+            flexDirection="column"
+            borderStyle={m.isSelf ? 'double' : 'round'}
+            borderColor={m.isSelf ? 'claude' : m.enabled ? 'success' : 'inactive'}
+            borderDimColor={!m.enabled && !m.isSelf}
+            hover={{ borderColor: 'claude', borderDimColor: false }}
+            paddingX={1}
+          >
+            <Box flexDirection="row" justifyContent="space-between" alignItems="center" columnGap={1}>
               <Text wrap="truncate-end">
-                <Text bold dimColor={!m.enabled}>
-                  {m.name}
+                <Text size="heading" weight="semibold" dimColor={!m.enabled} color={m.isSelf ? 'claude' : undefined}>
+                  {m.isSelf ? `◈ ${m.name}` : m.name}
                 </Text>
-                <Text dimColor>{tags(m)}</Text>
+                <Text size="footnote" mono dimColor>{`  v${m.version}`}</Text>
               </Text>
               {flip(m)}
             </Box>
+            {badges(m).some(Boolean) && (
+              <Box flexDirection="row" columnGap={1}>
+                {badges(m)}
+              </Box>
+            )}
+            {m.isSelf && (
+              <Text size="footnote" color="claude">
+                The Mod Manager you are using. It stays on so you can always get back here.
+              </Text>
+            )}
             {m.description !== '' && (
-              <Text dimColor wrap="wrap">
-                {m.description.length > 160 ? `${m.description.slice(0, 159)}…` : m.description}
+              <Text size="footnote" dimColor wrap="wrap">
+                {m.description.length > 170 ? `${m.description.slice(0, 169)}…` : m.description}
               </Text>
             )}
             <Box flexDirection="row" flexWrap="wrap" columnGap={1} alignItems="center">
-              {m.commands.length === 0 && <Text dimColor>{m.enabled ? 'No commands: it works by itself above the prompt or in hooks.' : 'Off.'}</Text>}
+              {m.commands.length === 0 && <Text size="footnote" dimColor italic>{m.enabled ? 'No commands: it works by itself, above the prompt or in hooks.' : 'Off: its commands come back once it is on and reloaded.'}</Text>}
               {commandButtons(m)}
+            </Box>
+            <Box flexDirection="row" justifyContent="space-between" alignItems="center">
+              <Text size="caption" dimColor>
+                {`@${m.marketplace}${m.installedAt ? ` · installed ${since(m.installedAt, now)}` : ''}`}
+              </Text>
               <Button key={`open-${m.id}`} label="Open in Hub ↗" plain dimColor onPress={() => void openHub($, `#/mod/${encodeURIComponent(m.id)}`)} />
-              {m.installedAt !== '' && <Text dimColor>{`installed ${since(m.installedAt, now)}`}</Text>}
             </Box>
           </Box>
         ))
       )}
 
-      <Box flexDirection="row" justifyContent="space-between" alignItems="center">
-        <Button key="prev" label="‹ Prev" plain dimColor={p === 0} onPress={() => update($, page, n => Math.max(0, n - 1))} />
-        <Text dimColor>
-          {shown.length === 0 ? 'nothing shown' : `${p * per + 1}–${Math.min(shown.length, (p + 1) * per)} of ${shown.length}${shown.length < s.mods.length ? ` (${s.mods.length} installed)` : ''}`}
-        </Text>
-        <Button key="next" label="Next ›" plain dimColor={p >= pages - 1} onPress={() => update($, page, n => Math.min(pages - 1, n + 1))} />
-      </Box>
+      {pages > 1 && (
+        <Box flexDirection="row" justifyContent="space-between" alignItems="center">
+          <Button key="prev" label="‹ Prev" plain dimColor={p === 0} onPress={() => update($, page, n => Math.max(0, n - 1))} />
+          <Text size="footnote" dimColor tabular>{`page ${p + 1} of ${pages}`}</Text>
+          <Button key="next" label="Next ›" plain dimColor={p >= pages - 1} onPress={() => update($, page, n => Math.min(pages - 1, n + 1))} />
+        </Box>
+      )}
     </Box>
   )
 }
