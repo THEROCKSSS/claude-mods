@@ -32,6 +32,33 @@ Four mods, all validated and tested. See README for what each does and AGENTS.md
   - **The Mission feed:** the server is version 3 and accepts `POST /api/mission`.
 - **mission-control-win 0.1.3-win.2:** the desktop map is drawn at the pane's own size, with a ↗ Browser button. It pushes its tree and a 1400×860 map to the hub every 2 s when something changed.
 
+## Three new mods, hub resilience, GitHub polish (2026-10-23, v0.3.0)
+
+- **New mods:**
+  - port-watch 0.1.0 (`/ports`, with QR codes from vendored qrcode-generator)
+  - memory-status 0.1.0
+  - mod-updates 0.1.0
+  
+  Install them with `claude plugin install <name>@owen-mods`, then `/reload-plugins`.
+- **Hub resilience (mod-hub 0.2.1).** The live hub (pid 4484) died once with nothing logged, and the SSE-disconnect theory did not reproduce (there is a test for it). So the hub now:
+  - writes `~/.claude/mod-hub/hub.log`
+  - starts through WMI on Windows (its parent is WmiPrvSE, outside the app's tree)
+  - is restarted by mod-hub at most once a minute after going away
+
+  If it dies again, read hub.log first.
+- **Demo.** `npm run build:demo` puts the snapshot `web/src/demo-data.json` behind a NON-LIVE DATA banner. Buttons only toast. The `pages.yml` workflow publishes it.
+  - Regenerating the snapshot needs a running hub. The generator scripts lived in the session scratchpad and are not in the repo.
+  - The snapshot keeps builtin commands only, strips absolute paths, and the CI greps the built demo for private paths.
+- **Screenshots** are in `docs/screenshots`.
+  - Headless Chrome cannot draw the 3D logic canvas, though the home constellation works. `logic-3d.gif` was recorded from the in-app browser pane instead.
+  - A fresh Chrome profile shows the 2D view, because the 2D/3D choice is stored in localStorage.
+- **Repo files added:**
+  - CI (`ci.yml`): the hub server on Ubuntu and Windows, the web build plus the demo build, and `scripts/check-mods.mjs` on both OSes with npm `@anthropic-ai/claude-code@2.1.309`
+  - Dependabot
+  - issue templates (bug and mod idea, with the Model/Harness/Agent header) and a PR template
+  - CONTRIBUTING, SECURITY, CHANGELOG and THIRD_PARTY_NOTICES
+- **Social preview:** `docs/social-preview.png` is 1280×640. GitHub has no API for it, so it is uploaded by hand under Settings → General → Social preview.
+
 ## Known gaps
 
 - mission-control-win: 2 of 9 tests fail, the same 2 as upstream on engine 2.1.308.

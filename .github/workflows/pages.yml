@@ -1,0 +1,51 @@
+name: Pages demo
+
+# Publishes the Mod Hub web app with a saved snapshot (NON-LIVE DATA) to GitHub Pages,
+# so people can look around before installing. Nothing in the demo talks to a hub.
+on:
+  push:
+    branches: [main]
+    paths:
+      - mods/mod-hub/web/**
+      - mods/mod-hub/shared/**
+      - mods/mod-logic/shared/**
+      - .github/workflows/pages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mods/mod-hub/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mods/mod-hub/web/package-lock.json
+      - run: npm ci
+      - run: npm run build:demo
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: mods/mod-hub/web/dist-demo
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

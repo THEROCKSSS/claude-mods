@@ -1,6 +1,6 @@
 {
   "name": "mod-hub",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A bar above the prompt with your pinned commands and a prompt-cache countdown, a /mod-manager pane to turn mods on and off, run them and save presets of your setup, and /hub: a live web control room for every mod.",
   "author": {
     "name": "Owen (THEROCKSSS)",

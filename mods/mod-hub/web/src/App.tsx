@@ -7,7 +7,7 @@ import { Badge } from './components/ui/badge'
 import { Button } from './components/ui/button'
 import { Input } from './components/ui/input'
 import { Kbd } from './components/ui/kbd'
-import { useHub, useNow, useRoute, type Action, type HubState, type Link, type ModRow } from './hub'
+import { isDemo, useHub, useNow, useRoute, type Action, type HubState, type Link, type ModRow } from './hub'
 import { ModCard } from './ModCard'
 import { LoadGuard } from './LoadGuard'
 import { Logic } from './Logic'
@@ -31,6 +31,7 @@ export function App() {
 
   const act = useCallback(
     async (action: Action, said: string) => {
+      if (isDemo) return void toast.info('Demo with NON-LIVE DATA: nothing runs here', { description: `With mod-hub installed: ${said}` })
       try {
         await send(action)
         toast.success(said)
@@ -67,6 +68,15 @@ export function App() {
     <div className="mx-auto flex min-h-dvh max-w-7xl flex-col px-6 pt-8 pb-16 sm:px-8">
       <Header link={link} stateAt={stateAt} state={state} onPalette={() => setPaletteOpen(true)} onReload={reload} />
       <Nav route={route.name} />
+      {isDemo && (
+        <div className="mt-6 rounded-lg border border-brass/40 bg-brass/10 px-4 py-3 text-sm">
+          <span className="font-semibold tracking-wider text-brass">NON-LIVE DATA</span> · A saved snapshot of a real setup, so you can look around. Buttons explain what they would do; nothing runs.{' '}
+          <a className="font-medium text-foreground underline underline-offset-4" href="https://github.com/THEROCKSSS/claude-mods#install">
+            Install mod-hub
+          </a>{' '}
+          for your own live hub.
+        </div>
+      )}
       {!hasToken ? (
         <Notice title="Open the hub from Claude Code">This page needs the address the hub prints. Run /hub in Claude Code, or press ◈ Hub in the bar above the prompt.</Notice>
       ) : !state ? (
@@ -104,7 +114,7 @@ export function App() {
 
 function Header({ link, stateAt, state, onPalette, onReload }: { link: Link; stateAt: number; state: HubState | null; onPalette: () => void; onReload: () => void }) {
   const now = useNow(1_000)
-  const label = { live: 'LIVE DATA', stale: 'NOT UPDATING', offline: 'HUB OFFLINE', connecting: 'CONNECTING' }[link]
+  const label = { live: 'LIVE DATA', stale: 'NOT UPDATING', offline: 'HUB OFFLINE', connecting: 'CONNECTING', demo: 'NON-LIVE DATA' }[link]
   const tone = link === 'live' ? 'border-sage/40 text-sage' : link === 'connecting' ? 'border-border text-muted-foreground' : 'border-brass/50 text-brass'
   return (
     <header className="flex flex-wrap items-end justify-between gap-6 border-b pb-6">
@@ -119,7 +129,7 @@ function Header({ link, stateAt, state, onPalette, onReload }: { link: Link; sta
             {label}
           </span>
           <div className="mt-1">
-            {stateAt ? `Heard from Claude Code ${Math.max(0, Math.round((now - stateAt) / 1000))} s ago` : 'Not heard from Claude Code yet'}
+            {link === 'demo' ? 'Demo snapshot' : stateAt ? `Heard from Claude Code ${Math.max(0, Math.round((now - stateAt) / 1000))} s ago` : 'Not heard from Claude Code yet'}
             {state?.claudeVersion ? ` · ${state.claudeVersion}` : ''}
           </div>
           <CacheTimer cache={state?.cache ?? null} now={now} />

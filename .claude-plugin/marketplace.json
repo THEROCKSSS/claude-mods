@@ -1,6 +1,6 @@
 {
   "name": "owen-mods",
-  "description": "Owen's Claude Code mods: a mod manager with a live web hub, a live logic graph of every mod, and Windows forks of hamzafer/claude-code-mods.",
+  "description": "Owen's Claude Code mods: a mod manager with a live web hub, a live logic graph of every mod, ports with phone QR codes, memory and update watchers, and Windows forks of hamzafer/claude-code-mods.",
   "owner": {
     "name": "THEROCKSSS",
     "url": "https://github.com/THEROCKSSS"
@@ -9,7 +9,7 @@
     {
       "name": "mod-hub",
       "description": "A bar above the prompt with your pinned commands and a prompt-cache countdown, /mod-manager to turn mods on and off and save presets of your setup, and /hub: a live web control room (mods, presets, logic graph, Mission Control). Ships the mod-setup skill for agents.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "source": "./mods/mod-hub",
       "category": "Manage your mods",
       "tags": [
@@ -31,6 +31,45 @@
         "graph",
         "command",
         "live"
+      ]
+    },
+    {
+      "name": "port-watch",
+      "description": "/ports: every listening port, the project or container that owns it, and its Tailscale URL with a QR code to open it on your phone.",
+      "version": "0.1.0",
+      "source": "./mods/port-watch",
+      "category": "See what's happening",
+      "tags": [
+        "pane",
+        "command",
+        "network",
+        "qr"
+      ]
+    },
+    {
+      "name": "memory-status",
+      "description": "Whether your Supabase memory is up or degraded, and how many writes wait in its queue, with each container and a targeted fix.",
+      "version": "0.1.0",
+      "source": "./mods/memory-status",
+      "category": "See what's happening",
+      "tags": [
+        "band",
+        "pane",
+        "command",
+        "memory"
+      ]
+    },
+    {
+      "name": "mod-updates",
+      "description": "Spots new versions of your installed mods, shows the commits since you installed each, and updates one or all in a click.",
+      "version": "0.1.0",
+      "source": "./mods/mod-updates",
+      "category": "Manage your mods",
+      "tags": [
+        "pane",
+        "band",
+        "command",
+        "updates"
       ]
     },
     {

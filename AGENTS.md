@@ -11,7 +11,7 @@ Shared code sits outside `hooks/`, each folder with its own small `tsconfig.json
 
 Change behaviour there once, not in each view.
 
-Checks before a change is done:
+Checks before a change is done (`node scripts/check-mods.mjs` runs the first one for every mod and prints a table):
 
 - Every touched mod: `claude plugin validate mods/<name>` and `claude plugin test mods/<name>`, run with the binary that runs the session (`$CLAUDE_CODE_EXECPATH` in the desktop app).
 - `mods/mod-hub/server`: `node --test server/hub.test.mjs`.

@@ -1,0 +1,11 @@
+{
+  "name": "port-watch",
+  "version": "0.1.0",
+  "description": "/ports: every port listening on this machine, which project or container owns it, and whether your phone can reach it, with its Tailscale URL and a QR code to scan.",
+  "author": {
+    "name": "Owen (THEROCKSSS)",
+    "url": "https://github.com/THEROCKSSS"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts"
+}

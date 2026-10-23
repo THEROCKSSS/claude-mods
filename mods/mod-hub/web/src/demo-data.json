@@ -1,0 +1,3116 @@
+{
+ "state": {
+  "generatedAt": 1792791327901,
+  "claudeVersion": "2.1.309",
+  "mods": [
+   {
+    "id": "agent-radar@claude-code-mods",
+    "name": "agent-radar",
+    "marketplace": "claude-code-mods",
+    "version": "0.2.0",
+    "installedAt": "2026-10-23T16:17:11.750Z",
+    "description": "One live line above the prompt per running subagent or background shell: time, tool count and what it's doing. /radar shows every agent and its messages.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "radar",
+      "description": "Show what each subagent and background command is doing, in the Agent Radar pane"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "blast-radius-win@owen-mods",
+    "name": "blast-radius-win",
+    "marketplace": "owen-mods",
+    "version": "0.2.3-win.1",
+    "installedAt": "2026-10-23T16:37:53.921Z",
+    "description": "Windows fork of blast-radius: holds risky Bash and PowerShell commands, shows what they would change, and fails closed.",
+    "enabled": true,
+    "commands": [],
+    "isSelf": false
+   },
+   {
+    "id": "cache-clock@claude-code-mods",
+    "name": "cache-clock",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.1",
+    "installedAt": "2026-10-23T16:22:02.381Z",
+    "description": "A prompt-cache line under your status line, from Claude Code's own cache figures: time left while warm, hit rate and misses, and how many tokens the next message re-caches once cold. /cache-clock setup adds it.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "cache-clock",
+      "description": "Add a prompt-cache line under the status line; /cache-clock remove takes it out"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "context-bar@claude-code-mods",
+    "name": "context-bar",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.3",
+    "installedAt": "2026-10-23T16:15:23.471Z",
+    "description": "Your context window as a stacked bar above the prompt, a color per category, with token counts and the compaction point. /context-bar shows or hides it.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "context-bar",
+      "description": "Show or hide the context window bar above the prompt"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "heatmap@claude-code-mods",
+    "name": "heatmap",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.1",
+    "installedAt": "2026-10-23T16:21:59.976Z",
+    "description": "A GitHub-style grid of your Claude Code time in a /heatmap pane, with streaks, peaks and top projects.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "heatmap",
+      "description": "A GitHub-style grid of your Claude Code time"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "md-preview@claude-code-mods",
+    "name": "md-preview",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.7",
+    "installedAt": "2026-10-23T16:17:13.737Z",
+    "description": "Shows the Markdown files Claude edits, rendered like GitHub, in a pane next to the chat. Before and after side by side. /md opens it.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "md",
+      "description": "Preview the Markdown files Claude edited, rendered like GitHub"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "memory-status@owen-mods",
+    "name": "memory-status",
+    "marketplace": "owen-mods",
+    "version": "0.1.0",
+    "installedAt": "2026-10-23T21:29:58.074Z",
+    "description": "Whether your Supabase memory is up or degraded, and how many writes wait in its queue, with each container and a targeted fix.",
+    "enabled": true,
+    "commands": [],
+    "isSelf": false
+   },
+   {
+    "id": "mission-control-win@owen-mods",
+    "name": "mission-control-win",
+    "marketplace": "owen-mods",
+    "version": "0.1.3-win.2",
+    "installedAt": "2026-10-23T16:37:55.253Z",
+    "description": "Windows fork of mission-control: /mission opens the live agent and tool-call map and a readable code map in the desktop app; ↗ Browser shows both full size in the Mod Hub.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "mission",
+      "description": "Open the live map of agents and tool calls; /mission code opens the code map"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "mod-hub@owen-mods",
+    "name": "mod-hub",
+    "marketplace": "owen-mods",
+    "version": "0.2.0",
+    "installedAt": "2026-10-23T17:02:22.652Z",
+    "description": "A bar above the prompt with your pinned commands and a prompt-cache countdown, /mod-manager to turn mods on and off and save presets of your setup, and /hub: a live web control room (mods, presets, logic graph, Mission Control). Ships the mod-setup skill for agents.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "hub",
+      "description": "Open the Mod Hub web app: every mod, live, with a command palette"
+     },
+     {
+      "name": "mod-hub:mod-setup",
+      "description": "Set up Claude Code mods from the owen-mods marketplace. Use when installing mod-hub on a new machine, when the person installs or writes another mod, or when a mod is missing from the Mod Hub, the bar above the prompt, or /mod-logic."
+     },
+     {
+      "name": "mod-manager",
+      "description": "Turn mods on and off, run their commands, and pin them to the bar"
+     }
+    ],
+    "isSelf": true
+   },
+   {
+    "id": "mod-logic@owen-mods",
+    "name": "mod-logic",
+    "marketplace": "owen-mods",
+    "version": "0.1.0",
+    "installedAt": "2026-10-23T17:23:18.900Z",
+    "description": "/mod-logic shows how every mod works: the events it hooks, the capabilities it calls (tagged by risk) and what it registers, as a live graph in 2D, and 3D in the Mod Hub.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "mod-logic",
+      "description": "See how every mod works: what it hooks, calls and registers, as a live graph"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "mod-store@mod-store",
+    "name": "mod-store",
+    "marketplace": "mod-store",
+    "version": "0.1.1",
+    "installedAt": "2026-10-23T16:12:09.387Z",
+    "description": "/mods: browse, search and install community Claude Code mods from a pane, with what each one can access shown before you install",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "mods",
+      "description": "Browse and install community Claude Code mods"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "mod-updates@owen-mods",
+    "name": "mod-updates",
+    "marketplace": "owen-mods",
+    "version": "0.1.0",
+    "installedAt": "2026-10-23T21:29:59.273Z",
+    "description": "Spots new versions of your installed mods, shows the commits since you installed each, and updates one or all in a click.",
+    "enabled": true,
+    "commands": [],
+    "isSelf": false
+   },
+   {
+    "id": "next-steps@claude-code-mods",
+    "name": "next-steps",
+    "marketplace": "claude-code-mods",
+    "version": "0.3.0",
+    "installedAt": "2026-10-23T16:21:58.882Z",
+    "description": "After each turn, 2 or 3 likely next prompts above the prompt. Press 1, 2 or 3 in an empty prompt to draft one, 0 to dismiss.",
+    "enabled": true,
+    "commands": [],
+    "isSelf": false
+   },
+   {
+    "id": "port-watch@owen-mods",
+    "name": "port-watch",
+    "marketplace": "owen-mods",
+    "version": "0.1.0",
+    "installedAt": "2026-10-23T21:30:00.262Z",
+    "description": "/ports: every listening port, the project or container that owns it, and its Tailscale URL with a QR code to open it on your phone.",
+    "enabled": true,
+    "commands": [],
+    "isSelf": false
+   },
+   {
+    "id": "replay-theater@claude-code-mods",
+    "name": "replay-theater",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.3",
+    "installedAt": "2026-10-23T16:22:01.056Z",
+    "description": "Step through the last turn's file edits, one diff at a time.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "replay",
+      "description": "Step through the last turn's file edits"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "review-watch@claude-code-mods",
+    "name": "review-watch",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.2",
+    "installedAt": "2026-10-23T16:17:14.900Z",
+    "description": "A live line above the prompt for each running code review: Codex or a review subagent, its model, what it reviews, time, and Codex's latest output. A toast with the findings when it ends.",
+    "enabled": true,
+    "commands": [],
+    "isSelf": false
+   },
+   {
+    "id": "snake@claude-code-mods",
+    "name": "snake",
+    "marketplace": "claude-code-mods",
+    "version": "0.2.3",
+    "installedAt": "2026-10-23T16:22:03.349Z",
+    "description": "Snake in a pane while Claude works, paused when it's done. Opt-in, so nothing opens until /snake.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "snake",
+      "description": "Turn Snake on or off: it plays in a pane while Claude works"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "switchboard@claude-code-mods",
+    "name": "switchboard",
+    "marketplace": "claude-code-mods",
+    "version": "0.3.2",
+    "installedAt": "2026-10-23T16:21:57.785Z",
+    "description": "Picks the model for each subagent that names none, with OpenAI's Decisions API or Jev, from its short label only. One line per spawn above the prompt; /route shows each pick and what each subagent cost.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "route",
+      "description": "Show which model Switchboard picked for each subagent, and what it cost"
+     }
+    ],
+    "isSelf": false
+   },
+   {
+    "id": "usage-meter@claude-code-mods",
+    "name": "usage-meter",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.1",
+    "installedAt": "2026-10-23T16:15:22.503Z",
+    "description": "Your plan's 5-hour and 7-day usage as small bars above the prompt, with the reset countdown and the session's cost.",
+    "enabled": true,
+    "commands": [],
+    "isSelf": false
+   },
+   {
+    "id": "where-am-i@claude-code-mods",
+    "name": "where-am-i",
+    "marketplace": "claude-code-mods",
+    "version": "0.1.5",
+    "installedAt": "2026-10-23T16:17:12.720Z",
+    "description": "A live recap above the prompt: goal, doing now, waiting on you, next. /where for a longer one.",
+    "enabled": true,
+    "commands": [
+     {
+      "name": "where",
+      "description": "Recap the session so far in a few bullets"
+     }
+    ],
+    "isSelf": false
+   }
+  ],
+  "otherCommands": [
+   {
+    "name": "deep-research",
+    "description": "Deep research harness — fan-out web searches, fetch sources, adversarially verify claims, synthesize a cited report.",
+    "source": "builtin"
+   },
+   {
+    "name": "design",
+    "description": "Make a new Design artifact from a brief",
+    "source": "builtin"
+   },
+   {
+    "name": "slides",
+    "description": "Make a new Slides deck artifact from a brief",
+    "source": "builtin"
+   },
+   {
+    "name": "design-sync",
+    "description": "Push a React design system to claude.ai/design. This runs a converter that bundles the real component code (from Storybook or a bare package) and uploads it. Use when the user runs /design-sync or says \"sync my design system to Claude Design\".",
+    "source": "builtin"
+   },
+   {
+    "name": "dataviz",
+    "description": "Use this skill whenever you are about to create ANY chart, graph, plot, dashboard, or data visualization, in ANY output medium — an HTML or React artifact, inline SVG, plotting code in any library (matplotlib, plotly, d3, Recharts, …), an image/PNG you will render and upload, or a chart shared into Slack. Read it BEFORE writing the first line of chart code, choosing chart colors, building a stat tile / meter / KPI row, or laying out a dashboard. When the destination is a first-party document connector (host-designated, never self-described) that renders live charts, hand it the rows (inline, or as an uploaded data file the chart cites) rather than a rendered PNG/SVG — a picture of a chart loses hover, data inspection and per-value comments. Produces visualizations that read as one system — elegant, accessible, consistent in light and dark — using a brand-neutral placeholder palette you swap for your own. Teaches a design-system-agnostic method: a form heuristic, a color formula with a runnable validator, mark specs, and interaction rules. A validated default palette is documented in `references/palette.md` — swap that file's values for your brand's. Triggers on: \"chart\", \"graph\", \"plot\", \"data viz\", \"visualization\", \"dashboard\", \"analytics\", \"visualize data\", \"categorical colors\", \"sequential / diverging palette\", \"stat tile\", \"sparkline\", \"heatmap\", \"legend\", \"axis\", \"tooltip\", \"chart colors\", \"color by series\".",
+    "source": "builtin"
+   },
+   {
+    "name": "artifact-design",
+    "description": "Design guidance and fundamentals for Artifacts.",
+    "source": "builtin"
+   },
+   {
+    "name": "artifact-diagramming",
+    "description": "Diagramming know-how for Artifacts - when a picture earns its place, how to draw one that shows the real mechanism, and the inline-SVG mechanics that keep it legible in both themes.",
+    "source": "builtin"
+   },
+   {
+    "name": "artifact-capabilities",
+    "description": "Runtime capabilities a published Artifact page can be granted — behavior static HTML cannot provide on its own, such as the page reading live or connected data, remembering what people do on it (a poll, a sign-up sheet, a checklist, a document edited in place — it saves new versions of itself), keeping state shared across viewers, knowing who is viewing, asking Claude a question of its own, storing files people add, handing the viewer a file to save, or using the viewer's camera, microphone, location, screen or device motion. Serves this user's live capability roster and the typed call definitions. Load it whenever any such runtime behavior would make an artifact more useful, before writing the page.",
+    "source": "builtin"
+   },
+   {
+    "name": "update-config",
+    "description": "Use this skill to configure the Claude Code harness via settings.json. Automated behaviors (\"from now on when X\", \"each time X\", \"whenever X\", \"before/after X\") require hooks configured in settings.json - the harness executes these, not Claude, so memory/preferences cannot fulfill them. Also use for: permissions (\"allow X\", \"add permission\", \"move permission to\"), env vars (\"set X=Y\"), hook troubleshooting, or any changes to settings.json/settings.local.json files. Examples: \"allow npm commands\", \"add bq permission to global settings\", \"move permission to user settings\", \"set DEBUG=true\", \"when claude stops show X\". For simple settings like theme/model, suggest the /config command.",
+    "source": "builtin"
+   },
+   {
+    "name": "keybindings-help",
+    "description": "Use when the user wants to customize keyboard shortcuts, rebind keys, add chord bindings, or modify ~/.claude/keybindings.json. Examples: \"rebind ctrl+s\", \"add a chord shortcut\", \"change the submit key\", \"customize keybindings\".",
+    "source": "builtin"
+   },
+   {
+    "name": "verify",
+    "description": "Verify that a code change actually does what it's supposed to by exercising it end-to-end and observing behavior — drive the affected flow, not just tests or typecheck. Run before committing nontrivial changes; bootstraps this repo's project verify skill if none exists yet. Don't invoke it on a diff that only touches tests, docs, or other code with no runtime surface to drive (a change to product source always has one) — there's nothing to observe.",
+    "source": "builtin"
+   },
+   {
+    "name": "debug",
+    "description": "Enable debug logging for this session and help diagnose issues",
+    "source": "builtin"
+   },
+   {
+    "name": "code-review",
+    "description": "Review the current diff, or a PR number/branch/path target, for correctness bugs (plus reuse/simplification/efficiency cleanups where the model's review recipe covers them) at the given effort level (low|medium|high|xhigh|max: from few high-confidence findings up to many, some of them uncertain; ultra: deep multi-agent review in the cloud); with no level given, it reuses the level you typed last. Pass --comment to post findings as inline PR comments, or --fix to apply the findings to the working tree after the review. Pass --max-findings <n> to report up to n findings, or --max-findings all for every finding. The choice stays until you pass --max-findings default. For ultra on a GitHub.com PR target, --post asks to post the finished review’s findings to the PR as a single comment from the user’s GitHub account (not a review; the launch dialog still confirms in interactive sessions, while non-interactive mode posts on the flag alone) and --no-post hides that option.",
+    "source": "builtin"
+   },
+   {
+    "name": "simplify",
+    "description": "Review the changed code for reuse, simplification, efficiency, and altitude cleanups, then apply the fixes. Quality only — it does not hunt for bugs; use /code-review for that.",
+    "source": "builtin"
+   },
+   {
+    "name": "batch",
+    "description": "Research and plan a large-scale change, then execute it in parallel across 5–30 isolated worktree agents that each open a PR.",
+    "source": "builtin"
+   },
+   {
+    "name": "fewer-permission-prompts",
+    "description": "Scan your transcripts for common read-only Bash and MCP tool calls, then add a prioritized allowlist to project .claude/settings.json to reduce permission prompts.",
+    "source": "builtin"
+   },
+   {
+    "name": "doctor",
+    "description": "Health-check the user's Claude Code setup and fix issues: diagnose installation health — what the `claude doctor` terminal diagnostics cover — from local data (duplicate or leftover installs, PATH, unparseable settings files, broken or colliding agent definitions, skills whose frontmatter fails to parse); find unused skills, MCP servers, and plugins versus their context cost and disable dead weight; deduplicate local CLAUDE.md files against checked-in ones; trim checked-in CLAUDE.md files by cutting content a session could derive from the codebase (directory layouts, tech-stack lists, architecture overviews) while keeping gotchas, rationale, and non-standard conventions; migrate always-loaded CLAUDE.md guidance into lazy skills and nested CLAUDE.md files; flag slow hooks and context-heavy extensions; check the installed version is current; make auto mode the default permission mode; and pre-approve frequently denied read-only commands. Use when the user asks for a doctor run, checkup, audit, tune-up, or cleanup of their Claude Code setup or configuration.",
+    "source": "builtin"
+   },
+   {
+    "name": "loop",
+    "description": "Run a prompt or slash command on a recurring interval (e.g. /loop 5m /foo). Omit the interval to let the model self-pace.",
+    "source": "builtin"
+   },
+   {
+    "name": "schedule",
+    "description": "Create, update, list, or run scheduled cloud agents (routines) that execute on a cron schedule.",
+    "source": "builtin"
+   },
+   {
+    "name": "claude-api",
+    "description": "Reference for the Claude API / Anthropic SDK — model ids, pricing, params, streaming, tool use, MCP, agents, caching, token counting, model migration.\nTRIGGER — read BEFORE opening the target file; don't skip because it \"looks like a one-liner\" — whenever: the prompt names Claude/Anthropic in any form (Claude, Anthropic, Fable, Opus, Sonnet, Haiku, `anthropic`, `@anthropic-ai`, `claude-*`, `us.anthropic.*`, `[1m]`); the user asks about an LLM (pricing/model choice/limits/caching) — never answer from memory; OR the task is LLM-shaped with provider unstated (agent/MCP/tool-definition/multi-agent/RAG/LLM-judge/computer-use; generate/summarize/extract/classify/rewrite/converse over NL; debugging refusals/cutoffs/streaming/tool-calls/tokens).\nSKIP only when another provider is being worked on (overrides all triggers): OpenAI/GPT/Gemini/Llama/Mistral/Cohere/Ollama named in the query; OR `grep -rE 'openai|langchain_openai|google.generativeai|genai|mistralai|cohere|ollama'` over the project hits (run this grep FIRST if no provider named — don't Read the file).",
+    "source": "builtin"
+   },
+   {
+    "name": "workflow-authoring",
+    "description": "Reference for writing a Workflow tool script (script API and gotchas, resume, quality patterns, worked examples). Load before authoring a script for a workflow the user already opted into; it does not itself authorize running one.",
+    "source": "builtin"
+   },
+   {
+    "name": "run",
+    "description": "Launch and drive this project's app to see a change working. Use when asked to run, start, or screenshot the app, or to confirm a change works in the real app (not just tests). First looks for a project skill that already covers launching the app; otherwise falls back to built-in patterns per project type (CLI, server, TUI, Electron, browser-driven, library).",
+    "source": "builtin"
+   },
+   {
+    "name": "run-skill-generator",
+    "description": "Author or improve the run-<unit> skill - a per-project skill that tells agents how to build, launch, and drive this project's app. Use when the user asks to set up the project, get it running, write run instructions, or verify build/run steps work from a clean environment.",
+    "source": "builtin"
+   },
+   {
+    "name": "plugin-authoring",
+    "description": "Make a mod: a change to Claude's own interface or behaviour, such as a panel or pane that stays beside the chat and updates, a band, status line, toast, slash command, or hook on tool calls. Use to make, change or debug a mod or its hooks module.",
+    "source": "builtin"
+   },
+   {
+    "name": "advisor",
+    "description": "Let Claude consult a stronger model at key moments",
+    "source": "builtin"
+   },
+   {
+    "name": "agents",
+    "description": "(removed) Ask Claude to create/manage subagents, or edit .claude/agents/",
+    "source": "builtin"
+   },
+   {
+    "name": "auto-mode-setup",
+    "description": "Teach auto mode about your environment, plus optional rule tweaks",
+    "source": "builtin"
+   },
+   {
+    "name": "autocompact",
+    "description": "Configure the auto-compact window size",
+    "source": "builtin"
+   },
+   {
+    "name": "clear",
+    "description": "Start a new session with empty context; previous session stays on disk (resumable with /resume)",
+    "source": "builtin"
+   },
+   {
+    "name": "color",
+    "description": "Set the prompt bar color for this session",
+    "source": "builtin"
+   },
+   {
+    "name": "compact",
+    "description": "Free up context by summarizing the conversation so far",
+    "source": "builtin"
+   },
+   {
+    "name": "config",
+    "description": "Set a setting by key",
+    "source": "builtin"
+   },
+   {
+    "name": "output-style",
+    "description": "List output styles or switch to one",
+    "source": "builtin"
+   },
+   {
+    "name": "context",
+    "description": "Show current context usage",
+    "source": "builtin"
+   },
+   {
+    "name": "effort",
+    "description": "Set effort level for model usage",
+    "source": "builtin"
+   },
+   {
+    "name": "fast",
+    "description": "Toggle fast mode (Opus 5.5)",
+    "source": "builtin"
+   },
+   {
+    "name": "focus",
+    "description": "Toggle focus view: just your prompt, summary, and response",
+    "source": "builtin"
+   },
+   {
+    "name": "heapdump",
+    "description": "Dump the JS heap to the Desktop; on Linux with no Desktop folder, the home directory",
+    "source": "builtin"
+   },
+   {
+    "name": "init",
+    "description": "Initialize a new CLAUDE.md file with codebase documentation",
+    "source": "builtin"
+   },
+   {
+    "name": "mcp",
+    "description": "Manage MCP servers",
+    "source": "builtin"
+   },
+   {
+    "name": "import",
+    "description": "Import config from another AI coding agent",
+    "source": "builtin"
+   },
+   {
+    "name": "model",
+    "description": "Set the AI model for Claude Code",
+    "source": "builtin"
+   },
+   {
+    "name": "__remote-workflow",
+    "description": "Run the workflow script delivered in this session environment (server-launched sessions only)",
+    "source": "builtin"
+   },
+   {
+    "name": "workflow-launch-exec",
+    "description": "Execute a server-launched workflow handoff (workflow_launch event sessions only)",
+    "source": "builtin"
+   },
+   {
+    "name": "reload-plugins",
+    "description": "Activate pending plugin changes in the current session",
+    "source": "builtin"
+   },
+   {
+    "name": "reload-skills",
+    "description": "Pick up skills added or changed on disk during this session",
+    "source": "builtin"
+   },
+   {
+    "name": "rename",
+    "description": "Rename the current conversation",
+    "source": "builtin"
+   },
+   {
+    "name": "ultrareview",
+    "description": "Start a cloud agent that finds and verifies bugs in your branch (~15-25 min, $5-$25 USD) · Runs in a cloud session. See http…",
+    "source": "builtin"
+   },
+   {
+    "name": "security-review",
+    "description": "Complete a security review of the pending changes on the current branch",
+    "source": "builtin"
+   },
+   {
+    "name": "usage-credits",
+    "description": "Configure usage credits or request them from your admin when you hit a limit",
+    "source": "builtin"
+   },
+   {
+    "name": "extra-usage",
+    "description": "Renamed to /usage-credits",
+    "source": "builtin"
+   },
+   {
+    "name": "usage",
+    "description": "Show session cost, plan usage, and what's contributing to your limits",
+    "source": "builtin"
+   },
+   {
+    "name": "insights",
+    "description": "Generate a report analyzing your Claude Code sessions",
+    "source": "builtin"
+   },
+   {
+    "name": "recap",
+    "description": "Generate a one-line session recap now",
+    "source": "builtin"
+   },
+   {
+    "name": "skill-doctor",
+    "description": "Show which loaded skills are unused and costing context",
+    "source": "builtin"
+   },
+   {
+    "name": "goal",
+    "description": "Set a goal — keep working until the condition is met",
+    "source": "builtin"
+   },
+   {
+    "name": "design-consent",
+    "description": "Grant Claude agent access to your Design projects",
+    "source": "builtin"
+   },
+   {
+    "name": "design-revoke",
+    "description": "Revoke Claude agent access to your Design projects",
+    "source": "builtin"
+   },
+   {
+    "name": "list-agents",
+    "description": "List subagents, teammates, and other Claude sessions you can message",
+    "source": "builtin"
+   },
+   {
+    "name": "team-onboarding",
+    "description": "Help teammates ramp on Claude Code with a guide from your usage",
+    "source": "builtin"
+   }
+  ],
+  "pins": [
+   "mod-logic",
+   "mission"
+  ],
+  "pending": [],
+  "presets": [
+   {
+    "id": "my-setup",
+    "name": "My setup",
+    "note": "Everything on, with heatmap, the logic graph and a recap open; tick context-bar or snake if they are off when you apply",
+    "mods": {
+     "agent-radar@claude-code-mods": "on",
+     "blast-radius-win@owen-mods": "on",
+     "cache-clock@claude-code-mods": "on",
+     "context-bar@claude-code-mods": "on",
+     "heatmap@claude-code-mods": "on",
+     "md-preview@claude-code-mods": "on",
+     "mission-control-win@owen-mods": "on",
+     "mod-logic@owen-mods": "on",
+     "mod-store@mod-store": "on",
+     "next-steps@claude-code-mods": "on",
+     "replay-theater@claude-code-mods": "on",
+     "review-watch@claude-code-mods": "on",
+     "snake@claude-code-mods": "on",
+     "switchboard@claude-code-mods": "on",
+     "usage-meter@claude-code-mods": "on",
+     "where-am-i@claude-code-mods": "on"
+    },
+    "steps": [
+     {
+      "command": "heatmap",
+      "args": "",
+      "enabled": true
+     },
+     {
+      "command": "mod-logic",
+      "args": "",
+      "enabled": true
+     },
+     {
+      "command": "where",
+      "args": "",
+      "enabled": true
+     },
+     {
+      "command": "context-bar",
+      "args": "",
+      "enabled": false
+     },
+     {
+      "command": "snake",
+      "args": "",
+      "enabled": false
+     }
+    ],
+    "pins": [
+     "mod-logic",
+     "mission"
+    ],
+    "by": "claude",
+    "updatedAt": 1792779030011
+   },
+   {
+    "id": "engineering",
+    "name": "Engineering",
+    "note": "Deep coding work: watch agents and reviews, replay edits, guard risky commands; no games",
+    "mods": {
+     "blast-radius-win@owen-mods": "on",
+     "mission-control-win@owen-mods": "on",
+     "agent-radar@claude-code-mods": "on",
+     "review-watch@claude-code-mods": "on",
+     "replay-theater@claude-code-mods": "on",
+     "md-preview@claude-code-mods": "on",
+     "context-bar@claude-code-mods": "on",
+     "usage-meter@claude-code-mods": "on",
+     "where-am-i@claude-code-mods": "on",
+     "cache-clock@claude-code-mods": "on",
+     "snake@claude-code-mods": "off",
+     "heatmap@claude-code-mods": "off"
+    },
+    "steps": [
+     {
+      "command": "mission",
+      "args": "",
+      "enabled": true
+     },
+     {
+      "command": "where",
+      "args": "",
+      "enabled": true
+     }
+    ],
+    "pins": [
+     "mission",
+     "replay",
+     "radar",
+     "where"
+    ],
+    "by": "claude",
+    "updatedAt": 1792779077875
+   },
+   {
+    "id": "focus",
+    "name": "Focus",
+    "note": "Quiet screen: only the guard, the context bar, usage and a recap; everything chatty off",
+    "mods": {
+     "blast-radius-win@owen-mods": "on",
+     "context-bar@claude-code-mods": "on",
+     "usage-meter@claude-code-mods": "on",
+     "where-am-i@claude-code-mods": "on",
+     "snake@claude-code-mods": "off",
+     "heatmap@claude-code-mods": "off",
+     "next-steps@claude-code-mods": "off",
+     "agent-radar@claude-code-mods": "off",
+     "review-watch@claude-code-mods": "off",
+     "replay-theater@claude-code-mods": "off",
+     "md-preview@claude-code-mods": "off",
+     "switchboard@claude-code-mods": "off",
+     "mod-store@mod-store": "off"
+    },
+    "steps": [],
+    "pins": [
+     "where"
+    ],
+    "by": "claude",
+    "updatedAt": 1792779080443
+   },
+   {
+    "id": "building-mods",
+    "name": "Building mods",
+    "note": "Working on mods: the live logic graph, the mod store, Markdown preview and Mission Control",
+    "mods": {
+     "blast-radius-win@owen-mods": "on",
+     "mod-logic@owen-mods": "on",
+     "mod-store@mod-store": "on",
+     "md-preview@claude-code-mods": "on",
+     "mission-control-win@owen-mods": "on",
+     "replay-theater@claude-code-mods": "on",
+     "context-bar@claude-code-mods": "on"
+    },
+    "steps": [
+     {
+      "command": "mod-logic",
+      "args": "",
+      "enabled": true
+     }
+    ],
+    "pins": [
+     "mod-logic",
+     "mods",
+     "mission",
+     "replay"
+    ],
+    "by": "claude",
+    "updatedAt": 1792779082191
+   },
+   {
+    "id": "code-review",
+    "name": "Code review",
+    "note": "Reviewing changes: watch review runs, replay the last edits, read Markdown rendered",
+    "mods": {
+     "blast-radius-win@owen-mods": "on",
+     "review-watch@claude-code-mods": "on",
+     "replay-theater@claude-code-mods": "on",
+     "md-preview@claude-code-mods": "on",
+     "agent-radar@claude-code-mods": "on",
+     "mission-control-win@owen-mods": "on",
+     "snake@claude-code-mods": "off"
+    },
+    "steps": [
+     {
+      "command": "replay",
+      "args": "",
+      "enabled": true
+     }
+    ],
+    "pins": [
+     "replay",
+     "md",
+     "radar"
+    ],
+    "by": "claude",
+    "updatedAt": 1792779083852
+   },
+   {
+    "id": "streaming",
+    "name": "Streaming",
+    "note": "Safe to show on stream: hides plan usage and costs, keeps the fun; tick /snake to start it",
+    "mods": {
+     "blast-radius-win@owen-mods": "on",
+     "usage-meter@claude-code-mods": "off",
+     "switchboard@claude-code-mods": "off",
+     "heatmap@claude-code-mods": "off",
+     "next-steps@claude-code-mods": "off",
+     "snake@claude-code-mods": "on",
+     "where-am-i@claude-code-mods": "on",
+     "agent-radar@claude-code-mods": "on"
+    },
+    "steps": [
+     {
+      "command": "snake",
+      "args": "",
+      "enabled": false
+     }
+    ],
+    "pins": [
+     "where"
+    ],
+    "by": "claude",
+    "updatedAt": 1792779086177
+   },
+   {
+    "id": "save-tokens",
+    "name": "Save tokens",
+    "note": "Spend less: track usage, context, cache and subagent cost; turn off mods that call Haiku every turn",
+    "mods": {
+     "blast-radius-win@owen-mods": "on",
+     "usage-meter@claude-code-mods": "on",
+     "context-bar@claude-code-mods": "on",
+     "cache-clock@claude-code-mods": "on",
+     "switchboard@claude-code-mods": "on",
+     "next-steps@claude-code-mods": "off",
+     "mission-control-win@owen-mods": "off"
+    },
+    "steps": [
+     {
+      "command": "route",
+      "args": "",
+      "enabled": true
+     }
+    ],
+    "pins": [
+     "route",
+     "where"
+    ],
+    "by": "claude",
+    "updatedAt": 1792779087593
+   }
+  ],
+  "recent": [
+   {
+    "command": "mod-logic",
+    "args": "",
+    "at": 0
+   },
+   {
+    "command": "mission",
+    "args": "",
+    "at": 0
+   },
+   {
+    "command": "where",
+    "args": "",
+    "at": 0
+   },
+   {
+    "command": "snake",
+    "args": "",
+    "at": 0
+   }
+  ],
+  "cache": {
+   "at": 1792791331556,
+   "ttlMs": 3600000,
+   "isLearned": true
+  }
+ },
+ "graph": {
+  "mods": [
+   {
+    "id": "agent-radar@claude-code-mods",
+    "name": "agent-radar",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx",
+     "hooks/watch"
+    ],
+    "hooks": [
+     {
+      "event": "agent.spawn",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "command.run",
+      "matcher": "radar",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "Bash",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 3
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 2
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 2
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "agent.list",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "session.messages",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "radar"
+    ],
+    "tools": [],
+    "state": [
+     "agents",
+     "now",
+     "selected"
+    ],
+    "guards": 0,
+    "lines": 510
+   },
+   {
+    "id": "blast-radius-win@owen-mods",
+    "name": "blast-radius-win",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "tool.call",
+      "matcher": "Bash",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "PowerShell",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 4
+     },
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 3
+     },
+     {
+      "name": "clock.now",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "clock.sleep",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "session.surfaces",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [],
+    "tools": [],
+    "state": [
+     "held"
+    ],
+    "guards": 2,
+    "lines": 434
+   },
+   {
+    "id": "cache-clock@claude-code-mods",
+    "name": "cache-clock",
+    "enabled": true,
+    "files": [
+     "hooks/register.ts"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "cache-clock",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "fs.write",
+      "risk": "writes",
+      "count": 7
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 5
+     },
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 1
+     },
+     {
+      "name": "session.root",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "session.version",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "settings.read",
+      "risk": "state",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "cache-clock"
+    ],
+    "tools": [],
+    "state": [],
+    "guards": 0,
+    "lines": 231
+   },
+   {
+    "id": "context-bar@claude-code-mods",
+    "name": "context-bar",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "context-bar",
+      "count": 1
+     },
+     {
+      "event": "session.compact",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "session.usage",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "store.get",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "store.set",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "context-bar"
+    ],
+    "tools": [],
+    "state": [
+     "isHidden",
+     "reading"
+    ],
+    "guards": 0,
+    "lines": 268
+   },
+   {
+    "id": "heatmap@claude-code-mods",
+    "name": "heatmap",
+    "enabled": true,
+    "files": [
+     "hooks/grid",
+     "hooks/heat",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "heatmap",
+      "count": 1
+     },
+     {
+      "event": "session.end",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.message",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 4
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "fs.list",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 2
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.log",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.write",
+      "risk": "writes",
+      "count": 1
+     },
+     {
+      "name": "session.root",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "store.get",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "store.set",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "heatmap"
+    ],
+    "tools": [],
+    "state": [
+     "isLoading",
+     "scope",
+     "version"
+    ],
+    "guards": 0,
+    "lines": 741
+   },
+   {
+    "id": "md-preview@claude-code-mods",
+    "name": "md-preview",
+    "enabled": true,
+    "files": [
+     "hooks/md",
+     "hooks/page",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "md",
+      "count": 1
+     },
+     {
+      "event": "command.run",
+      "matcher": "mdview",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 5
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 4
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 4
+     },
+     {
+      "name": "clock.now",
+      "risk": "time",
+      "count": 3
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 3
+     },
+     {
+      "name": "clock.after",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "fs.write",
+      "risk": "writes",
+      "count": 2
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.panes",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [],
+    "tools": [],
+    "state": [
+     "compare",
+     "files",
+     "frame",
+     "note",
+     "pair",
+     "shown",
+     "view"
+    ],
+    "guards": 0,
+    "lines": 1450
+   },
+   {
+    "id": "memory-status@owen-mods",
+    "name": "memory-status",
+    "enabled": true,
+    "files": [
+     "hooks/bands.ts",
+     "hooks/check.ts",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "memory-status",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 4
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 4
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 3
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 3
+     },
+     {
+      "name": "clock.now",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "http.fetch",
+      "risk": "network",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.copy",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "memory-status"
+    ],
+    "tools": [],
+    "state": [
+     "armed",
+     "busy",
+     "fix",
+     "fixOutput",
+     "history",
+     "reading"
+    ],
+    "guards": 0,
+    "lines": 450
+   },
+   {
+    "id": "mission-control-win@owen-mods",
+    "name": "mission-control-win",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/map",
+     "hooks/register.tsx",
+     "hooks/tree"
+    ],
+    "hooks": [
+     {
+      "event": "agent.spawn",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "command.run",
+      "matcher": "mission",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 8
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 4
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 3
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 3
+     },
+     {
+      "name": "clock.after",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "http.fetch",
+      "risk": "network",
+      "count": 2
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 2
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "command.run",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "fs.write",
+      "risk": "writes",
+      "count": 1
+     },
+     {
+      "name": "model.complete",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.panes",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "mission"
+    ],
+    "tools": [],
+    "state": [
+     "files",
+     "frame",
+     "nodes",
+     "now",
+     "turn",
+     "view"
+    ],
+    "guards": 0,
+    "lines": 885
+   },
+   {
+    "id": "mod-hub@owen-mods",
+    "name": "mod-hub",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx",
+     "shared/presets",
+     "shared/view"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "command.run",
+      "matcher": "hub",
+      "count": 1
+     },
+     {
+      "event": "command.run",
+      "matcher": "mod-manager",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "mcp__mod-hub__mod_presets",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.step",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "clock.now",
+      "risk": "time",
+      "count": 12
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 9
+     },
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 7
+     },
+     {
+      "name": "store.set",
+      "risk": "state",
+      "count": 7
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 6
+     },
+     {
+      "name": "store.get",
+      "risk": "state",
+      "count": 5
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 4
+     },
+     {
+      "name": "http.fetch",
+      "risk": "network",
+      "count": 4
+     },
+     {
+      "name": "clock.sleep",
+      "risk": "time",
+      "count": 3
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 3
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "command.list",
+      "risk": "other",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 2
+     },
+     {
+      "name": "command.run",
+      "risk": "drives",
+      "count": 2
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "clock.after",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "session.version",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "settings.read",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "store.delete",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "tool.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "ui.copy",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "hub",
+     "mod-manager"
+    ],
+    "tools": [
+     "mod_presets"
+    ],
+    "state": [
+     "beat",
+     "busy",
+     "cacheAt",
+     "clickMode",
+     "compact",
+     "confirmDelete",
+     "draftName",
+     "editing",
+     "hubUrl",
+     "note",
+     "page",
+     "recent",
+     "state",
+     "tab",
+     "view"
+    ],
+    "guards": 0,
+    "lines": 1568
+   },
+   {
+    "id": "mod-logic@owen-mods",
+    "name": "mod-logic",
+    "enabled": true,
+    "files": [
+     "hooks/register.tsx",
+     "shared/logic"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "mod-logic",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 3
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "http.fetch",
+      "risk": "network",
+      "count": 2
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "clock.after",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "command.run",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 1
+     },
+     {
+      "name": "settings.read",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "mod-logic"
+    ],
+    "tools": [],
+    "state": [
+     "changed",
+     "focus",
+     "kinds",
+     "logic",
+     "page",
+     "shared",
+     "tab"
+    ],
+    "guards": 0,
+    "lines": 781
+   },
+   {
+    "id": "mod-store@mod-store",
+    "name": "mod-store",
+    "enabled": true,
+    "files": [
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "mods",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "mcp__mod-store__search_mods",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "mcp__mod-store__show_mod",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 2
+     },
+     {
+      "name": "tool.register",
+      "risk": "other",
+      "count": 2
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "clock.now",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "http.fetch",
+      "risk": "network",
+      "count": 1
+     },
+     {
+      "name": "prompt.fill",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "prompt.submit",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "store.get",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "store.set",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "mods"
+    ],
+    "tools": [
+     "search_mods",
+     "show_mod"
+    ],
+    "state": [
+     "filter",
+     "installed",
+     "isBusy",
+     "isConfirming",
+     "loadedAt",
+     "page",
+     "query",
+     "selected",
+     "sort",
+     "status"
+    ],
+    "guards": 0,
+    "lines": 641
+   },
+   {
+    "id": "mod-updates@owen-mods",
+    "name": "mod-updates",
+    "enabled": true,
+    "files": [
+     "hooks/bands.ts",
+     "hooks/register.tsx",
+     "hooks/updates.ts"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "mod-updates",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 7
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 3
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 2
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 2
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "clock.after",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "command.run",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "mod-updates"
+    ],
+    "tools": [],
+    "state": [
+     "checkedAt",
+     "checking",
+     "error",
+     "rows",
+     "showAll",
+     "updated",
+     "updating"
+    ],
+    "guards": 0,
+    "lines": 469
+   },
+   {
+    "id": "next-steps@claude-code-mods",
+    "name": "next-steps",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "prompt.edit",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "prompt.submit",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 2
+     },
+     {
+      "name": "agent.list",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "model.complete",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "session.messages",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [],
+    "tools": [],
+    "state": [
+     "active",
+     "steps"
+    ],
+    "guards": 0,
+    "lines": 290
+   },
+   {
+    "id": "port-watch@owen-mods",
+    "name": "port-watch",
+    "enabled": true,
+    "files": [
+     "hooks/ports.ts",
+     "hooks/register.tsx",
+     "hooks/vendor/qrcode.mjs"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "ports",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 3
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.copy",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.panes",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "ports"
+    ],
+    "tools": [],
+    "state": [
+     "error",
+     "filter",
+     "page",
+     "qr",
+     "query",
+     "rows",
+     "scannedAt",
+     "scanning",
+     "tailnetIp"
+    ],
+    "guards": 0,
+    "lines": 2700
+   },
+   {
+    "id": "replay-theater@claude-code-mods",
+    "name": "replay-theater",
+    "enabled": true,
+    "files": [
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "replay",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "Edit",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "Write",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "ui.status",
+      "risk": "draws",
+      "count": 3
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "replay"
+    ],
+    "tools": [],
+    "state": [
+     "pos",
+     "replay"
+    ],
+    "guards": 0,
+    "lines": 182
+   },
+   {
+    "id": "review-watch@claude-code-mods",
+    "name": "review-watch",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "agent.spawn",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "Bash",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 3
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "process.run",
+      "risk": "runs",
+      "count": 2
+     },
+     {
+      "name": "agent.list",
+      "risk": "drives",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [],
+    "tools": [],
+    "state": [
+     "now",
+     "reviews"
+    ],
+    "guards": 0,
+    "lines": 378
+   },
+   {
+    "id": "snake@claude-code-mods",
+    "name": "snake",
+    "enabled": true,
+    "files": [
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "snake",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.message",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Spinner",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "store.get",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "store.set",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "snake"
+    ],
+    "tools": [],
+    "state": [
+     "best",
+     "isOn",
+     "isPlaying",
+     "score"
+    ],
+    "guards": 0,
+    "lines": 95
+   },
+   {
+    "id": "switchboard@claude-code-mods",
+    "name": "switchboard",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx",
+     "hooks/route"
+    ],
+    "hooks": [
+     {
+      "event": "agent.spawn",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "command.run",
+      "matcher": "route",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "Pane",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 5
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 2
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "clock.sleep",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "ui.close",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.open",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "route"
+    ],
+    "tools": [],
+    "state": [
+     "now",
+     "routes"
+    ],
+    "guards": 0,
+    "lines": 506
+   },
+   {
+    "id": "usage-meter@claude-code-mods",
+    "name": "usage-meter",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "session.measure",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "clock.now",
+      "risk": "time",
+      "count": 2
+     },
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 2
+     },
+     {
+      "name": "clock.every",
+      "risk": "time",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "session.usage",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     },
+     {
+      "name": "ui.toast",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [],
+    "tools": [],
+    "state": [
+     "snapshot",
+     "tick",
+     "warned"
+    ],
+    "guards": 0,
+    "lines": 291
+   },
+   {
+    "id": "where-am-i@claude-code-mods",
+    "name": "where-am-i",
+    "enabled": true,
+    "files": [
+     "hooks/bands",
+     "hooks/register.tsx"
+    ],
+    "hooks": [
+     {
+      "event": "command.run",
+      "matcher": "where",
+      "count": 1
+     },
+     {
+      "event": "prompt.submit",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "session.start",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "tool.call",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "turn.complete",
+      "matcher": "",
+      "count": 1
+     },
+     {
+      "event": "ui.render",
+      "matcher": "AbovePrompt",
+      "count": 1
+     }
+    ],
+    "calls": [
+     {
+      "name": "env.get",
+      "risk": "state",
+      "count": 2
+     },
+     {
+      "name": "model.complete",
+      "risk": "drives",
+      "count": 2
+     },
+     {
+      "name": "command.register",
+      "risk": "other",
+      "count": 1
+     },
+     {
+      "name": "fs.exists",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "fs.read",
+      "risk": "reads",
+      "count": 1
+     },
+     {
+      "name": "session.messages",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "state.get",
+      "risk": "state",
+      "count": 1
+     },
+     {
+      "name": "ui.resolve",
+      "risk": "draws",
+      "count": 1
+     }
+    ],
+    "commands": [
+     "where"
+    ],
+    "tools": [],
+    "state": [
+     "live",
+     "recap"
+    ],
+    "guards": 0,
+    "lines": 250
+   }
+  ],
+  "changed": {
+   "mod": "mod-hub@owen-mods",
+   "file": "hooks/register.tsx",
+   "at": 0
+  }
+ },
+ "mission": {
+  "at": 0,
+  "turn": 4,
+  "summary": {
+   "agents": 1,
+   "running": 0,
+   "tools": 5,
+   "failed": 0
+  },
+  "lines": [
+   {
+    "prefix": "",
+    "text": "◆ main · add presets to the mod manager  9m 00s",
+    "status": "running",
+    "kind": "main",
+    "family": "main"
+   },
+   {
+    "prefix": "├─ ",
+    "text": "● review the preset editor  1m 40s · 1 tools",
+    "status": "done",
+    "kind": "agent",
+    "family": "agent"
+   },
+   {
+    "prefix": "│  └─ ",
+    "text": "◉ read: Presets.tsx  1.0s",
+    "status": "done",
+    "kind": "tool",
+    "family": "read"
+   },
+   {
+    "prefix": "├─ ",
+    "text": "$ bash: Run the mod-hub tests  10s",
+    "status": "done",
+    "kind": "tool",
+    "family": "bash"
+   },
+   {
+    "prefix": "├─ ",
+    "text": "✎ edit: register.tsx → presets.ts  ×2  31s",
+    "status": "done",
+    "kind": "tool",
+    "family": "edit"
+   },
+   {
+    "prefix": "└─ ",
+    "text": "$ bash: Build the hub web app  5.0s",
+    "status": "running",
+    "kind": "tool",
+    "family": "bash"
+   }
+  ],
+  "files": [
+   {
+    "path": "mods/mod-hub/hooks/register.tsx",
+    "act": "edit",
+    "changed": true,
+    "why": "Adds presets and a prompt-cache countdown"
+   },
+   {
+    "path": "mods/mod-hub/shared/presets.ts",
+    "act": "edit",
+    "changed": true,
+    "why": "New: preset shapes, snapshot and apply plan"
+   },
+   {
+    "path": "mods/mod-hub/shared/view.ts",
+    "act": "edit",
+    "changed": true,
+    "why": ""
+   },
+   {
+    "path": "mods/mod-hub/web/src/Presets.tsx",
+    "act": "read",
+    "changed": false,
+    "why": ""
+   },
+   {
+    "path": "mods/mod-hub/web/src/App.tsx",
+    "act": "read",
+    "changed": false,
+    "why": ""
+   },
+   {
+    "path": "mods/mod-hub/web/src/hub.ts",
+    "act": "read",
+    "changed": false,
+    "why": ""
+   }
+  ],
+  "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1400\" height=\"860\" viewBox=\"0 0 1400 860\">\n<defs>\n<pattern id=\"dots\" width=\"22\" height=\"22\" patternUnits=\"userSpaceOnUse\"><circle cx=\"1\" cy=\"1\" r=\"1\" fill=\"#1a1f28\"/></pattern>\n<marker id=\"a\" viewBox=\"0 0 10 10\" refX=\"8\" refY=\"5\" markerWidth=\"6\" markerHeight=\"6\" orient=\"auto\"><path d=\"M0,1L9,5L0,9z\" fill=\"#6b7a96\"/></marker>\n<filter id=\"glow\" x=\"-40%\" y=\"-40%\" width=\"180%\" height=\"180%\"><feGaussianBlur stdDeviation=\"9\"/></filter>\n<filter id=\"shadow\" x=\"-20%\" y=\"-20%\" width=\"140%\" height=\"160%\"><feDropShadow dx=\"0\" dy=\"4\" stdDeviation=\"6\" flood-color=\"#000\" flood-opacity=\"0.45\"/></filter>\n</defs>\n<rect width=\"1400\" height=\"860\" fill=\"#0d1015\"/><rect width=\"1400\" height=\"860\" fill=\"url(#dots)\"/>\n<text x=\"24\" y=\"40\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"20\" font-weight=\"700\" fill=\"#e8ebf2\">Code map</text>\n<rect x=\"132\" y=\"23\" width=\"73.80000000000001\" height=\"24\" rx=\"12\" fill=\"#161b24\" stroke=\"#2a3140\"/><text x=\"168.9\" y=\"39.5\" text-anchor=\"middle\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"12.5\" fill=\"#7d8698\">6 files</text>\n<rect x=\"213.8\" y=\"23\" width=\"88.60000000000001\" height=\"24\" rx=\"12\" fill=\"#161b24\" stroke=\"#2a3140\"/><text x=\"258.1\" y=\"39.5\" text-anchor=\"middle\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"12.5\" fill=\"#3ddc84\">3 changed</text>\n<circle cx=\"320.40000000000003\" cy=\"35\" r=\"4.5\" fill=\"#ffa24c\"/><text x=\"331.40000000000003\" y=\"39.5\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"13\" fill=\"#ffa24c\">editing register.tsx</text>\n<g transform=\"translate(46.0,336.8) scale(1.500)\">\n<path d=\"M170,26 C200,26 200,44.5 230,44.5\" fill=\"none\" stroke=\"#6b7a96\" stroke-width=\"2\" marker-end=\"url(#a)\"/>\n<path d=\"M118.99999999999999,0 C118.99999999999999,-34 753,-34 753,31\" fill=\"none\" stroke=\"#6b7a96\" stroke-width=\"2\" marker-end=\"url(#a)\"/>\n<path d=\"M353,88.5 C353,1 753,1 753,31\" fill=\"none\" stroke=\"#6b7a96\" stroke-width=\"2\" marker-end=\"url(#a)\"/>\n<path d=\"M404,114.5 C434,114.5 434,79.5 464,79.5\" fill=\"none\" stroke=\"#3a4252\" stroke-width=\"1.5\" marker-end=\"url(#a)\"/>\n<path d=\"M118.99999999999999,107 C118.99999999999999,-15.5 519,-15.5 519,49.5\" fill=\"none\" stroke=\"#3a4252\" stroke-width=\"1.5\" marker-end=\"url(#a)\"/>\n<path d=\"M170,133 C200,133 200,114.5 230,114.5\" fill=\"none\" stroke=\"#3a4252\" stroke-width=\"1.5\" marker-end=\"url(#a)\"/>\n<path d=\"M118.99999999999999,107 C118.99999999999999,-15.5 753,-15.5 753,31\" fill=\"none\" stroke=\"#6b7a96\" stroke-width=\"2\" marker-end=\"url(#a)\"/>\n<path d=\"M170,133 C200,133 200,44.5 230,44.5\" fill=\"none\" stroke=\"#6b7a96\" stroke-width=\"2\" marker-end=\"url(#a)\"/>\n<path d=\"M638,79.5 C668,79.5 668,61 698,61\" fill=\"none\" stroke=\"#6b7a96\" stroke-width=\"2\" marker-end=\"url(#a)\"/>\n<rect x=\"0\" y=\"0\" width=\"170\" height=\"89\" rx=\"12\" fill=\"#ffa24c\" opacity=\"0.35\" filter=\"url(#glow)\"/>\n<g filter=\"url(#shadow)\"><rect x=\"0\" y=\"0\" width=\"170\" height=\"89\" rx=\"12\" fill=\"#1b2130\" stroke=\"#ffa24c\" stroke-width=\"1.5\"/></g>\n<rect x=\"0\" y=\"10\" width=\"3.5\" height=\"69\" rx=\"1.75\" fill=\"#ffa24c\"/>\n<text x=\"18\" y=\"24\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"14.5\" font-weight=\"650\" fill=\"#e8ebf2\">register.tsx</text>\n<text x=\"18\" y=\"41\" font-family=\"'SF Mono', Menlo, monospace\" font-size=\"11\" fill=\"#4b5263\">mod-hub/hooks</text>\n<text x=\"156\" y=\"24\" text-anchor=\"end\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"13\" fill=\"#ffa24c\">✎</text>\n<text x=\"18\" y=\"63\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"12.5\" fill=\"#aeb6c6\">Adds presets and a</text>\n<text x=\"18\" y=\"80\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"12.5\" fill=\"#aeb6c6\">prompt-cache…</text>\n<g filter=\"url(#shadow)\"><rect x=\"0\" y=\"107\" width=\"170\" height=\"52\" rx=\"12\" fill=\"#151922\" stroke=\"#2a3140\" stroke-width=\"1\"/></g>\n<text x=\"18\" y=\"131\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"14.5\" font-weight=\"650\" fill=\"#e8ebf2\">App.tsx</text>\n<text x=\"18\" y=\"148\" font-family=\"'SF Mono', Menlo, monospace\" font-size=\"11\" fill=\"#4b5263\">web/src</text>\n<g filter=\"url(#shadow)\"><rect x=\"234\" y=\"18.5\" width=\"170\" height=\"52\" rx=\"12\" fill=\"#151922\" stroke=\"#2a3140\" stroke-width=\"1\"/></g>\n<rect x=\"234\" y=\"28.5\" width=\"3.5\" height=\"32\" rx=\"1.75\" fill=\"#3ddc84\"/>\n<text x=\"252\" y=\"42.5\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"14.5\" font-weight=\"650\" fill=\"#e8ebf2\">view.ts</text>\n<text x=\"252\" y=\"59.5\" font-family=\"'SF Mono', Menlo, monospace\" font-size=\"11\" fill=\"#4b5263\">mod-hub/shared</text>\n<text x=\"390\" y=\"42.5\" text-anchor=\"end\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"13\" fill=\"#3ddc84\">✓</text>\n<g filter=\"url(#shadow)\"><rect x=\"234\" y=\"88.5\" width=\"170\" height=\"52\" rx=\"12\" fill=\"#151922\" stroke=\"#2a3140\" stroke-width=\"1\"/></g>\n<text x=\"252\" y=\"112.5\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"14.5\" font-weight=\"650\" fill=\"#e8ebf2\">Presets.tsx</text>\n<text x=\"252\" y=\"129.5\" font-family=\"'SF Mono', Menlo, monospace\" font-size=\"11\" fill=\"#4b5263\">web/src</text>\n<g filter=\"url(#shadow)\"><rect x=\"468\" y=\"53.5\" width=\"170\" height=\"52\" rx=\"12\" fill=\"#151922\" stroke=\"#2a3140\" stroke-width=\"1\"/></g>\n<text x=\"486\" y=\"77.5\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"14.5\" font-weight=\"650\" fill=\"#e8ebf2\">hub.ts</text>\n<text x=\"486\" y=\"94.5\" font-family=\"'SF Mono', Menlo, monospace\" font-size=\"11\" fill=\"#4b5263\">web/src</text>\n<g filter=\"url(#shadow)\"><rect x=\"702\" y=\"35\" width=\"170\" height=\"89\" rx=\"12\" fill=\"#151922\" stroke=\"#2a3140\" stroke-width=\"1\"/></g>\n<rect x=\"702\" y=\"45\" width=\"3.5\" height=\"69\" rx=\"1.75\" fill=\"#3ddc84\"/>\n<text x=\"720\" y=\"59\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"14.5\" font-weight=\"650\" fill=\"#e8ebf2\">presets.ts</text>\n<text x=\"720\" y=\"76\" font-family=\"'SF Mono', Menlo, monospace\" font-size=\"11\" fill=\"#4b5263\">mod-hub/shared</text>\n<text x=\"858\" y=\"59\" text-anchor=\"end\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"13\" fill=\"#3ddc84\">✓</text>\n<text x=\"720\" y=\"98\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"12.5\" fill=\"#aeb6c6\">New: preset shapes,</text>\n<text x=\"720\" y=\"115\" font-family=\"-apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif\" font-size=\"12.5\" fill=\"#aeb6c6\">snapshot and…</text>\n</g>\n</svg>"
+ }
+}

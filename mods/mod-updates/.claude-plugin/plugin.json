@@ -1,0 +1,20 @@
+{
+  "name": "mod-updates",
+  "version": "0.1.0",
+  "description": "Spots new versions of your installed mods, shows the commits since you installed each one, and updates one or all in a click. /mod-updates opens it.",
+  "author": {
+    "name": "Owen (THEROCKSSS)",
+    "url": "https://github.com/THEROCKSSS"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "everyHours": {
+      "type": "number",
+      "title": "Check every (hours)",
+      "description": "How often it fetches the marketplaces. 0 checks only when you open /mod-updates.",
+      "default": 6,
+      "min": 0
+    }
+  }
+}

@@ -100,6 +100,27 @@ test('the mission feed goes in and out, needs the token, and must be an svg', as
   assert.equal((await call('/api/mission', { headers: t })).json().mission.turn, 2)
 })
 
+test('a live-update tab that vanishes mid-stream does not take the hub down', async () => {
+  const t = { 'x-mod-hub-token': hub.token, 'content-type': 'application/json' }
+  // Open the event stream, then drop the socket hard, as a closed tab or a sleeping laptop does.
+  await new Promise((ok, fail) => {
+    const req = request({ host: '127.0.0.1', port: PORT, path: `/api/events?token=${hub.token}`, headers: { host: `127.0.0.1:${PORT}` } }, res => {
+      res.once('data', () => {
+        req.destroy()
+        res.socket?.destroy()
+        ok()
+      })
+    })
+    req.on('error', () => {})
+    req.on('error', fail)
+    req.end()
+  })
+  // Broadcast at once, before the server has seen the close, a few times over.
+  for (let i = 0; i < 5; i++) await call('/api/state', { method: 'POST', headers: t, body: { mods: [], n: i } })
+  await new Promise(done => setTimeout(done, 100))
+  assert.equal((await call('/api/ping')).status, 200)
+})
+
 test('ping says the server version; shutdown needs the token', async () => {
   const ping = (await call('/api/ping')).json()
   assert.equal(ping.version, SERVER_VERSION)

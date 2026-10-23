@@ -73,6 +73,8 @@ let ttlMs = MIN5 // the cache lifetime: 5 min until a request shows it lasts an 
 let isTtlLearned = false
 let ttlOverride: number | null = null
 let beatTimer: Timer | undefined
+let wasHubUp = false // only a hub that was up and went away is restarted on its own
+let lastRestartAt = 0
 
 export const register: Register = (on, options) => {
   port = typeof options.port === 'number' && options.port >= 1024 ? options.port : 8796
@@ -463,9 +465,11 @@ async function startServer($: EngineInterface): Promise<boolean> {
   const root = $.plugin.root.replace(/\\/g, '/')
   const args = [`${root}/server/hub.mjs`, '--dir', `${await configDir($)}/mod-hub`, '--app', `${root}/app`, '--port', String(port)]
   const isWindows = /^[A-Za-z]:\//.test(root)
-  // Detached, so the hub outlives this call: Start-Process on Windows, nohup elsewhere.
+  // Detached, so the hub outlives this call and the session: on Windows WMI starts it as a child of
+  // the WMI service, outside the app's process tree, so closing a window cannot take it down. nohup elsewhere.
+  const line = ['node', ...args].map(a => `"${a}"`).join(' ').replace(/'/g, "''")
   const argv = isWindows
-    ? ['powershell', '-NoProfile', '-NonInteractive', '-Command', `Start-Process -WindowStyle Hidden -FilePath 'node' -ArgumentList @(${args.map(psArg).join(',')})`]
+    ? ['powershell', '-NoProfile', '-NonInteractive', '-Command', `$si = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{ShowWindow=[uint16]0}; $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='${line}'; ProcessStartupInformation=$si}; if ($r.ReturnValue -ne 0) { [Console]::Error.WriteLine("WMI could not start node: $($r.ReturnValue)"); exit 1 }`]
     : ['sh', '-c', 'nohup node "$@" >/dev/null 2>&1 &', 'mod-hub', ...args]
   const r = await $.process.run(argv, { timeoutMs: 15_000 }).catch((err: unknown) => ({ exitCode: -1, stdout: '', stderr: String(err) }))
   if (r.exitCode !== 0) {
@@ -473,11 +477,6 @@ async function startServer($: EngineInterface): Promise<boolean> {
     return false
   }
   return true
-}
-
-// One Start-Process argument: double quotes inside, so a path with spaces stays one argument, in a single-quoted literal.
-function psArg(a: string) {
-  return `'"${a.replace(/'/g, "''")}"'`
 }
 
 async function openUrl($: EngineInterface, url: string) {
@@ -504,14 +503,24 @@ async function push($: EngineInterface) {
   else await update($, hubUrl, () => '')
 }
 
+// A hub that was up and went away is started again, at most once a minute; why it stopped is in hub.log.
+async function restartLostHub($: EngineInterface) {
+  if (!wasHubUp) return
+  const now = await $.clock.now()
+  if (now - lastRestartAt < 60_000) return
+  lastRestartAt = now
+  if (await startServer($)) $.ui.toast(`The Mod Hub stopped, so it was started again. Why it stopped: ${await configDir($)}/mod-hub/hub.log`)
+}
+
 // One beat: read plugins now and then; while the hub runs, send the state and run what it queued.
 async function tick($: EngineInterface) {
   ticks++
   if (ticks % Math.round(REFRESH_MS / TICK_MS) === 0) await refresh($).catch(() => {})
   if (!(await read($, hubUrl))) {
-    if (ticks % 10 === 0) await connect($) // a hub started elsewhere joins within 15 s
+    if (ticks % 10 === 0 && !(await connect($))) await restartLostHub($) // a hub started elsewhere joins within 15 s
     return
   }
+  wasHubUp = true
   await push($)
   const server = await serverInfo($)
   if (!server) return

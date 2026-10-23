@@ -57,7 +57,11 @@ const STALE_MS = 25_000
 
 const token = document.querySelector<HTMLMetaElement>('meta[name="mod-hub-token"]')?.content ?? ''
 
-export type Link = 'connecting' | 'live' | 'stale' | 'offline'
+// The public demo (npm run build:demo, for GitHub Pages): a saved snapshot of a real setup, no hub,
+// nothing runs. Fixed at build time, so the normal build drops the snapshot entirely.
+export const isDemo = import.meta.env.VITE_DEMO === '1'
+
+export type Link = 'connecting' | 'live' | 'stale' | 'offline' | 'demo'
 
 export function useHub() {
   const [state, setState] = useState<HubState | null>(null)
@@ -68,7 +72,20 @@ export function useHub() {
   const now = useNow(5_000)
 
   useEffect(() => {
-    if (!token || token === '__MOD_HUB_TOKEN__') return
+    if (!isDemo) return
+    void import('./demo-data.json').then(({ default: d }) => {
+      const at = Date.now()
+      const s = d.state as unknown as HubState
+      // The snapshot's clocks start now, so the cache countdown and "ago" labels read as a live session would.
+      setState({ ...s, generatedAt: at, cache: { at: at - 75_000, ttlMs: 3_600_000, isLearned: true }, recent: s.recent.map((r, i) => ({ ...r, at: at - (i + 1) * 240_000 })) })
+      setStateAt(at)
+      setGraph({ ...(d.graph as unknown as LogicFeed), changed: { ...(d.graph as unknown as LogicFeed).changed!, at: at - 30_000 } })
+      setMission({ ...(d.mission as unknown as MissionFeed), at })
+    })
+  }, [])
+
+  useEffect(() => {
+    if (isDemo || !token || token === '__MOD_HUB_TOKEN__') return
     const source = new EventSource(`api/events?token=${encodeURIComponent(token)}`)
     source.onopen = () => setIsOpen(true)
     source.onerror = () => setIsOpen(false) // EventSource retries by itself
@@ -91,6 +108,7 @@ export function useHub() {
   }, [])
 
   const send = useCallback(async (action: Action) => {
+    if (isDemo) return
     const r = await fetch('api/actions', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-mod-hub-token': token },
@@ -99,8 +117,8 @@ export function useHub() {
     if (!r.ok) throw new Error(`the hub refused it (${r.status})`)
   }, [])
 
-  const link: Link = !isOpen ? (state ? 'offline' : 'connecting') : !state ? 'connecting' : now - stateAt > STALE_MS ? 'stale' : 'live'
-  return { state, stateAt, graph, mission, link, send, hasToken: token !== '' && token !== '__MOD_HUB_TOKEN__' }
+  const link: Link = isDemo ? 'demo' : !isOpen ? (state ? 'offline' : 'connecting') : !state ? 'connecting' : now - stateAt > STALE_MS ? 'stale' : 'live'
+  return { state, stateAt, graph, mission, link, send, hasToken: isDemo || (token !== '' && token !== '__MOD_HUB_TOKEN__') }
 }
 
 // The time, moved on every `ms`, for "updated 4 s ago" and staleness.

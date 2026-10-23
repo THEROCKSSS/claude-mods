@@ -1,0 +1,37 @@
+{
+  "name": "memory-status",
+  "version": "0.1.0",
+  "description": "Whether your Supabase memory is up or degraded, and how many writes wait in its queue: a line above the prompt, and /memory-status with each container and a targeted fix.",
+  "author": {
+    "name": "Owen (THEROCKSSS)",
+    "url": "https://github.com/THEROCKSSS"
+  },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "url": {
+      "type": "string",
+      "title": "Memory URL",
+      "description": "The Supabase gateway. Empty finds it from your supabase-memory MCP server, else http://127.0.0.1:8100.",
+      "default": ""
+    },
+    "pendingFile": {
+      "type": "string",
+      "title": "Pending-write queue",
+      "description": "The pending.jsonl that degraded-mode writes wait in. Empty finds it next to your supabase-memory project.",
+      "default": ""
+    },
+    "critical": {
+      "type": "string",
+      "title": "Containers memory needs",
+      "description": "Comma-separated. Any of these stopped means degraded.",
+      "default": "supabase-kong,supabase-rest,supabase-db"
+    },
+    "onlyProblems": {
+      "type": "boolean",
+      "title": "Show the line only when something is wrong",
+      "description": "Off shows it all the time; on hides it while memory is ok and nothing is queued.",
+      "default": false
+    }
+  }
+}

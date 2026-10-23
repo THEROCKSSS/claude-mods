@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  hub-server:
+    name: Hub server (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --test mods/mod-hub/server/hub.test.mjs
+
+  web:
+    name: Hub web app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mods/mod-hub/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mods/mod-hub/web/package-lock.json
+      - run: npm ci
+      - name: Typecheck and build the app the hub serves
+        run: npm run build
+      - name: Build the Pages demo
+        run: npm run build:demo
+      - name: The demo carries no private paths
+        run: "! grep -rEi 'C:[/\\\\]Users|Hermes stuff' dist-demo"
+
+  mods:
+    name: Mods (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@2.1.309
+      - name: Validate and test every mod
+        run: node scripts/check-mods.mjs

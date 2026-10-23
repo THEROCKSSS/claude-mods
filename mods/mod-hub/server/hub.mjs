@@ -7,7 +7,7 @@
 // put in the page it serves), a Host of 127.0.0.1 or localhost on this port, and no
 // foreign Origin, so another website or a DNS-rebinding page cannot drive it.
 import { randomBytes } from 'node:crypto'
-import { mkdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs'
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join, normalize, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -208,7 +208,22 @@ if (isMain) {
     console.error('usage: node hub.mjs --dir <state dir> --app <app dir> [--port 8796]')
     process.exit(2)
   }
+  // A hub that stops says why in <dir>/hub.log: its start, its exit code, a signal, or the crash.
+  const log = line => {
+    try {
+      mkdirSync(args.dir, { recursive: true })
+      appendFileSync(join(args.dir, 'hub.log'), `${new Date().toISOString()} pid ${process.pid} ${line}\n`)
+    } catch {}
+  }
+  log(`start v${SERVER_VERSION} port ${args.port}`)
+  process.on('exit', code => log(`exit ${code}`))
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP', 'SIGBREAK']) process.on(signal, () => (log(`signal ${signal}`), process.exit(0)))
+  process.on('uncaughtException', err => {
+    log(`crash ${err?.stack ?? err}`)
+    process.exit(1)
+  })
   startHub(args).catch(err => {
+    log(`could not start: ${err.code ?? err.message}`)
     console.error(`mod-hub: ${err.code === 'EADDRINUSE' ? `port ${args.port} is in use` : err.message}`)
     process.exit(1)
   })

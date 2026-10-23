@@ -1,0 +1,74 @@
+name: Bug
+description: A mod does the wrong thing, crashes, or stays silent when it should not.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Numbers beat adjectives: versions, counts, the exact text you saw.
+        If an agent is filing this, fill in the three header fields too.
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The model that wrote this report, if an agent did (e.g. claude-opus-5-5). Leave empty if you are a person.
+  - type: input
+    id: harness
+    attributes:
+      label: Harness
+      description: Claude Code CLI, desktop app, IDE extension, or web.
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent
+      description: The agent's name, if one filed this.
+  - type: dropdown
+    id: mod
+    attributes:
+      label: Mod
+      options: [mod-hub, mod-logic, port-watch, memory-status, mod-updates, blast-radius-win, mission-control-win, the hub web app, not sure]
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: One line on what is wrong, then the evidence. What you expected and what happened, with the exact message or a screenshot.
+      placeholder: |
+        /ports lists nothing on Windows 11.
+        Expected: my dev server on 5173. Saw: "No listening ports found".
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: "`claude --version`, the mod's version from /mod-manager, your OS, and `node --version` if the hub is involved."
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. claude plugin install port-watch@owen-mods
+        2. /reload-plugins
+        3. /ports
+    validations:
+      required: true
+  - type: textarea
+    id: mechanism
+    attributes:
+      label: Mechanism (if you know it)
+      description: What breaks first and what that leads to. Skip it if you do not know; that is what the issue is for.
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How we will know it is fixed. Checkboxes are good.
+      placeholder: |
+        - [ ] /ports lists a server started with `npx vite`
+        - [ ] a test covers the case

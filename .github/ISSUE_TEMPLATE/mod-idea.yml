@@ -1,0 +1,45 @@
+name: Mod idea
+description: A new mod, or something an existing mod should do.
+labels: [idea]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The model that wrote this, if an agent did. Leave empty if you are a person.
+  - type: input
+    id: harness
+    attributes:
+      label: Harness
+      description: Where you would use it (CLI, desktop app, IDE extension, web).
+  - type: input
+    id: agent
+    attributes:
+      label: Agent
+      description: The agent's name, if one filed this.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What do you keep doing by hand, or keep not knowing? How often?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: The mod
+      description: What it shows or does, and where (a bar line, a pane, a command, a guard on tool calls, the web hub).
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] a band shows ... within 30 s of ...
+        - [ ] tests cover ...
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Similar mods, links, prior art.
