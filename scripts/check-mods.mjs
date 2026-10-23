@@ -1,6 +1,8 @@
-// node scripts/check-mods.mjs [mod ...]: `claude plugin validate` and `claude plugin test` for every mod
-// (or the ones named), with a table at the end. Exits 1 if any mod fails beyond its known failures.
+// node scripts/check-mods.mjs [--validate-only] [mod ...]: `claude plugin validate` and `claude plugin test`
+// for every mod (or the ones named), with a table at the end. Exits 1 if any mod fails beyond its known failures.
 //   CLAUDE_BIN picks the binary (in the desktop app: $CLAUDE_CODE_EXECPATH); default `claude`.
+//   The suites fake a Windows machine (C:/ paths, powershell), so CI runs them on Windows and only
+//   validates elsewhere.
 import { spawnSync } from 'node:child_process'
 import { readdirSync } from 'node:fs'
 import { join } from 'node:path'
@@ -11,7 +13,8 @@ const KNOWN_FAILURES = { 'mission-control-win': 2 }
 
 const root = fileURLToPath(new URL('..', import.meta.url))
 const bin = process.env.CLAUDE_BIN || process.env.CLAUDE_CODE_EXECPATH || 'claude'
-const wanted = process.argv.slice(2)
+const isValidateOnly = process.argv.includes('--validate-only')
+const wanted = process.argv.slice(2).filter(a => !a.startsWith('--'))
 const mods = readdirSync(join(root, 'mods'), { withFileTypes: true })
   .filter(d => d.isDirectory() && (wanted.length === 0 || wanted.includes(d.name)))
   .map(d => d.name)
@@ -25,6 +28,11 @@ const rows = []
 for (const mod of mods) {
   const dir = `mods/${mod}`
   const validate = run(['plugin', 'validate', dir])
+  if (isValidateOnly) {
+    if (validate.code !== 0) console.log(`\n--- ${mod} ---\n${validate.out}`)
+    rows.push({ mod, valid: validate.code === 0 ? 'yes' : 'NO', tests: 'not run', ok: validate.code === 0 })
+    continue
+  }
   const test = run(['plugin', 'test', dir])
   const pass = Number(test.out.match(/(\d+) pass/)?.[1] ?? 0)
   const fail = Number(test.out.match(/(\d+) fail/)?.[1] ?? (test.code === 0 ? 0 : 1))

@@ -61,6 +61,8 @@ Four mods, all validated and tested. See README for what each does and AGENTS.md
 
 ## Known gaps
 
+- **Mod suites are Windows-only.** The first CI run on Ubuntu failed 9 tests across memory-status, mod-hub, mod-logic, mod-updates and port-watch. Their fakes assume a Windows machine (`C:/Users/me`, `powershell`), while the engine reports posix paths on Linux. So CI runs the suites on Windows and only validates on Ubuntu. The macOS/Linux branches of those mods are therefore untested. The fix is platform-neutral fixtures, or a second fixture set per OS.
+
 - mission-control-win: 2 of 9 tests fail, the same 2 as upstream on engine 2.1.308.
 - The desktop session reports no surfaces, so blast-radius-win refuses risky commands outright instead of offering a Proceed button.
 - `$.command.run` queues a command pressed mid-turn until the turn ends. The engine has no way past that; the mod says so with a toast.

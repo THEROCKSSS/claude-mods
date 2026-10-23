@@ -10,7 +10,7 @@ Mods for [Claude Code](https://claude.com/claude-code):
 - a live graph of how every mod works
 - watchers for your ports, your agent memory and mod updates
 
-Built and tested on Windows. The hub, the logic graph, port-watch and mod-updates work anywhere Claude Code and Node run.
+Built and tested on Windows. mod-hub, mod-logic, port-watch, memory-status and mod-updates have macOS and Linux code paths, and CI validates every mod on Ubuntu, but their test suites only run on Windows so far. Reports from other systems are welcome.
 
 **[Try the hub in your browser →](https://therocksss.github.io/claude-mods/)** It is a saved snapshot (NON-LIVE DATA), so nothing runs.
 

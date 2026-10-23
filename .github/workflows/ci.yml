@@ -58,5 +58,10 @@ jobs:
           node-version: 22
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code@2.1.309
+      # The suites fake a Windows machine (C:/ paths, powershell), so they run on Windows; Ubuntu validates.
       - name: Validate and test every mod
+        if: runner.os == 'Windows'
         run: node scripts/check-mods.mjs
+      - name: Validate every mod
+        if: runner.os != 'Windows'
+        run: node scripts/check-mods.mjs --validate-only

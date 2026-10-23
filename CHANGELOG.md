@@ -21,7 +21,7 @@ Versions are per mod, as in each `plugin.json` and `.claude-plugin/marketplace.j
 
 - Each mod has an icon and a README.
 - Screenshots and a GIF.
-- CI on Windows and Ubuntu: hub server tests, a web build, and validating and testing every mod.
+- CI: hub server tests on Windows and Ubuntu, a web build, every mod's suite on Windows, and validating every mod on Ubuntu.
 - A Pages demo.
 - Dependabot.
 - Issue and PR templates.
