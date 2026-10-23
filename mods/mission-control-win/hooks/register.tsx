@@ -7,6 +7,8 @@
 //   - the desktop app draws the code map itself, as an Svg element: no Chrome, no PNG
 //   - in a terminal, the PNG comes from Chrome or Edge at their Windows paths, driven through Git Bash
 //   - Windows paths (C:\a\b) are read with forward slashes, so titles and imports resolve
+//   - the desktop map is drawn at the pane's own size, so its text stays readable
+//   - ↗ Browser: the same live view, full size, in the Mod Hub's #/mission page
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
@@ -25,11 +27,11 @@ const BROWSERS = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ]
 const GIT_BASH = 'C:/Program Files/Git/bin/bash.exe'
-// The size the desktop draws the code map at; the Svg scales it to the pane's width.
-const DESKTOP_MAP = { width: 1100, height: 680 }
 const MAX_NODES = 300
 const MAX_FILES = 14
 const BAND_AFTER_MS = 30_000 // the band stays this long after a turn ends
+const HUB_MAP = { width: 1400, height: 860 } // the map the browser view shows, full size
+const PUSH_MS = 2_000
 // Tools that are Claude Code's own bookkeeping, not work: kept out of the tree.
 const INTERNAL = new Set(['SubagentHandback', 'ToolSearch', 'TaskCreate', 'TaskUpdate', 'TaskGet', 'TaskList'])
 // Files that belong on a code map: source, config and docs, not images or binaries.
@@ -75,6 +77,10 @@ export const register: Register = on => {
         const busy = (await read($, nodes)).some(n => n.status === 'running')
         if (busy) await update($, now, () => Date.now())
       })().catch(() => {})
+    })
+    // The browser view: send what changed to a running Mod Hub, every couple of seconds.
+    $.clock.every(PUSH_MS, () => {
+      void pushMission($).catch(() => {})
     })
     return r
   })
@@ -176,6 +182,7 @@ export const register: Register = on => {
       <Box flexDirection="row" gap={1}>
         <Button key="who" label="Who" hotkey="w" variant={v === 'who' ? 'primary' : undefined} onPress={() => update($, view, () => 'who')} />
         <Button key="code" label="Code" hotkey="c" variant={v === 'code' ? 'primary' : undefined} onPress={() => void setCode($)} />
+        <Button key="browser" label="↗ Browser" hotkey="b" onPress={() => void openInBrowser($)} />
         <Button key="close" label="Close" hotkey="q" role="dismiss" onPress={() => $.ui.close({ id: PANE })} />
       </Box>
     )
@@ -193,11 +200,14 @@ export const register: Register = on => {
         }
         const { Svg } = table
         const list = await read($, files)
-        // Drawn on each redraw: the clock read above moves the glow on while Claude works.
+        // Drawn at the pane's own width and shape, so the text is its real size instead of a thumbnail's;
+        // the clock read above moves the glow on while Claude works.
+        const size = paneMap(columns, rows)
         return (
-          <Box flexDirection="column">
+          <Box flexDirection="column" gap={1}>
             {head}
-            <Svg key="map" source={svg(list, { ...DESKTOP_MAP, at: Date.now(), turn: await read($, turn) })} alt={`Code map of ${list.length} files Claude touched`} isInteractive />
+            <Svg key="map" source={svg(list, { ...size, at: Date.now(), turn: await read($, turn) })} alt={`Code map of ${list.length} files Claude touched`} width={size.width} height={size.height} isInteractive />
+            <Text dimColor>{list.length ? 'Hover a card for its path · ↗ Browser opens it full size' : 'Files Claude reads or edits show up here.'}</Text>
           </Box>
         )
       }
@@ -379,4 +389,71 @@ async function renderMap($: EngineInterface) {
   const url = /^[A-Za-z]:\//.test(svgPath) ? `file:///${encodeURI(svgPath)}` : `file://${encodeURI(svgPath)}`
   const r = await $.process.run([shell, '-c', script, 'mission-control-win', CHROME, png, `${dir}/chrome`, `${width},${height}`, url], { timeoutMs: 20_000 })
   if (r.exitCode === 0) await update($, frame, () => ({ file: png, n }))
+}
+
+// The desktop map's size in CSS pixels, from the pane's columns and rows: as wide as the pane,
+// and taller than wide in a narrow pane, so the cards keep a readable size.
+export function paneMap(columns: number, rows: number) {
+  const width = Math.max(340, Math.min(1400, Math.round(columns * 8.2)))
+  const height = Math.max(360, Math.min(Math.round(rows * 19), Math.round(width * (width < 700 ? 1.25 : 0.62))))
+  return { width, height }
+}
+
+// ── The browser view (Mod Hub #/mission) ──────────────────────────────────
+
+type Hub = { port: number; token: string }
+let lastSent = ''
+
+async function hubInfo($: EngineInterface): Promise<Hub | null> {
+  const home = (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE'))?.replace(/\\/g, '/')
+  const dir = (await $.env.get('CLAUDE_CONFIG_DIR'))?.replace(/\\/g, '/') ?? `${home}/.claude`
+  const text = await $.fs.read(`${dir}/mod-hub/server.json`).catch(() => '')
+  try {
+    const h = JSON.parse(typeof text === 'string' ? text : '') as Hub
+    return typeof h.port === 'number' && typeof h.token === 'string' ? h : null
+  } catch {
+    return null
+  }
+}
+
+// Sends the agent tree and the full-size code map to the hub when either changed.
+async function pushMission($: EngineInterface, force = false) {
+  const hub = await hubInfo($)
+  if (!hub) return
+  const list = await read($, nodes)
+  const mapFiles = await read($, files)
+  const t = await read($, turn)
+  const at = Date.now()
+  const signature = JSON.stringify([list.map(n => [n.id, n.status, n.label]), mapFiles.map(f => [f.path, f.act, f.at, f.why]), t])
+  const isBusy = list.some(n => n.status === 'running')
+  if (!force && signature === lastSent && !isBusy) return
+  const body = {
+    at,
+    turn: t,
+    summary: summary(list),
+    lines: lines(list, at).slice(-200).map(l => ({ prefix: l.prefix, text: l.text, status: l.status, kind: l.node.kind, family: l.node.family })),
+    files: mapFiles.map(f => ({ path: f.path, act: f.act, changed: f.changedTurn === t, why: f.why ?? '' })),
+    svg: svg(mapFiles, { ...HUB_MAP, at, turn: t }),
+  }
+  const r = await $.http.fetch(`http://127.0.0.1:${hub.port}/api/mission`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-mod-hub-token': hub.token },
+    body: JSON.stringify(body),
+  }).catch(() => null)
+  if (r?.ok) lastSent = signature
+}
+
+// Opens the hub's #/mission page; starts the hub through /hub when none runs (mod-hub installed).
+async function openInBrowser($: EngineInterface) {
+  const hub = await hubInfo($)
+  const ping = hub ? await $.http.fetch(`http://127.0.0.1:${hub.port}/api/ping`).catch(() => null) : null
+  if (!hub || ping?.status !== 200) {
+    $.ui.toast('Starting the Mod Hub. Press ↗ Browser again once it opens')
+    await $.command.run({ command: 'hub' }).catch(() => $.ui.toast('The browser view needs mod-hub: install it, then run /hub'))
+    return
+  }
+  await pushMission($, true)
+  const url = `http://127.0.0.1:${hub.port}/#/mission`
+  const isWindows = /^[A-Za-z]:\//.test($.plugin.root.replace(/\\/g, '/'))
+  await $.process.run(isWindows ? ['explorer.exe', url] : ['open', url], { timeoutMs: 10_000 }).catch(() => null)
 }

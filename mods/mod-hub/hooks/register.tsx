@@ -3,6 +3,9 @@
 //     button for each pinned command, and ↻ Reload once a mod was turned on or off.
 //   - /mod-manager: a pane listing each mod with On/Off, a button per command, and pins.
 //   - /hub: starts the local web app (server/hub.mjs) and opens it in the browser.
+//   - Presets: named setups (mods on or off, pins, commands to run), saved and applied from
+//     the pane or the hub. Claude can make them through the mod_presets tool; only the person applies.
+//   - The bar shows how long the prompt cache stays warm after the last request.
 //     The page only queues actions; this module checks each one against what is
 //     installed and runs it: a command through $.command.run, On/Off through the
 //     running Claude Code's `plugin enable|disable`, a reload through /reload-plugins.
@@ -12,6 +15,7 @@ import type { CommandInfo, EngineInterface, Register, Timer } from 'claude-code'
 import type { HubState, ModRow } from '../types'
 import { bandsFile, parseOrder, stackBands } from './bands'
 import { cleanView, counts, DEFAULT_VIEW, FILTERS, isDefault, isNew, SORTS, sources, viewMods, type View } from '../shared/view'
+import { cleanPreset, countdown, isToggle, plan, snapshot, summary, upsert, type Preset, type RecentCommand } from '../shared/presets'
 
 const NAME = 'mod-hub'
 const PANE = 'mod-hub'
@@ -21,7 +25,13 @@ const TICK_MS = 1_500 // how often the hub is asked for actions while it runs
 const REFRESH_MS = 15_000 // how often installed plugins are read again
 const PINS_KEY = 'pins'
 const DEFAULT_PINS = ['mod-logic', 'mission']
-const SERVER_VERSION = 2 // server/hub.mjs SERVER_VERSION: a running hub below this is replaced
+const SERVER_VERSION = 3 // server/hub.mjs SERVER_VERSION: a running hub below this is replaced
+const PRESETS_KEY = 'presets'
+const APPLY_KEY = 'pendingApply' // a preset whose commands wait for the reload its mods asked for
+const TTL_KEY = 'cacheTtl'
+const MIN5 = 5 * 60_000
+const HOUR = 60 * 60_000
+const MAX_RECENT = 12
 
 const state = atom({ plugin: 'mod-hub', key: 'state' } as const, null as HubState | null)
 const hubUrl = atom({ plugin: 'mod-hub', key: 'hubUrl' } as const, '')
@@ -31,6 +41,13 @@ const compact = atom({ plugin: 'mod-hub', key: 'compact' } as const, false)
 const clickMode = atom({ plugin: 'mod-hub', key: 'clickMode' } as const, 'run' as 'run' | 'copy')
 const page = atom({ plugin: 'mod-hub', key: 'page' } as const, 0)
 const busy = atom({ plugin: 'mod-hub', key: 'busy' } as const, '')
+const tab = atom({ plugin: 'mod-hub', key: 'tab' } as const, 'mods' as 'mods' | 'presets')
+const editing = atom({ plugin: 'mod-hub', key: 'editing' } as const, '')
+const confirmDelete = atom({ plugin: 'mod-hub', key: 'confirmDelete' } as const, '')
+const draftName = atom({ plugin: 'mod-hub', key: 'draftName' } as const, '')
+const recentAtom = atom({ plugin: 'mod-hub', key: 'recent' } as const, [] as RecentCommand[])
+const cacheAt = atom({ plugin: 'mod-hub', key: 'cacheAt' } as const, 0)
+const beat = atom({ plugin: 'mod-hub', key: 'beat' } as const, 0)
 
 type Server = { port: number; host: string; token: string; pid: number }
 type Action =
@@ -38,6 +55,10 @@ type Action =
   | { seq: number; type: 'toggle'; id: string; on: boolean }
   | { seq: number; type: 'reload' }
   | { seq: number; type: 'pins'; pins: string[] }
+  | { seq: number; type: 'preset-save'; preset: unknown }
+  | { seq: number; type: 'preset-delete'; id: string }
+  | { seq: number; type: 'preset-apply'; id: string }
+  | { seq: number; type: 'preset-snapshot'; name: string }
 
 let port = 8796
 let showBar = true
@@ -48,10 +69,15 @@ let lastPushed = ''
 let isTurnRunning = false // a command run now waits for the turn to end; the person is told so
 let pending: string[] = [] // module-level: a reload runs register again and empties it, which is right
 let bandOrder: Promise<string[]> | undefined
+let ttlMs = MIN5 // the cache lifetime: 5 min until a request shows it lasts an hour
+let isTtlLearned = false
+let ttlOverride: number | null = null
+let beatTimer: Timer | undefined
 
 export const register: Register = (on, options) => {
   port = typeof options.port === 'number' && options.port >= 1024 ? options.port : 8796
   showBar = options.showBar !== false
+  ttlOverride = options.cacheTtl === '5m' ? MIN5 : options.cacheTtl === '1h' ? HOUR : null
   pending = []
   lastPushed = ''
   bandOrder = undefined
@@ -66,6 +92,38 @@ export const register: Register = (on, options) => {
     })
     await refresh($).catch(() => {})
     await restoreView($).catch(() => {})
+    await restoreCache($).catch(() => {})
+    await $.tool.register({
+      name: 'mod_presets',
+      description:
+        "Make, change, list or delete the person's mod presets (mod-hub). A preset is a named setup: mods to turn on or off " +
+        "(only the mods it names change), the bar's pinned commands, and slash commands to run when applied. Use action " +
+        "'list' first: it shows the installed mods, their commands (toggles marked), the commands the person ran lately and " +
+        "the presets so far. 'save' creates one (no id) or updates one (its id). You only save presets: the person applies " +
+        'them from the Mod Manager or the hub. Leave commands marked as toggles off (enabled: false) unless asked.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          action: { type: 'string', enum: ['list', 'save', 'delete'] },
+          id: { type: 'string', description: 'For delete: the preset id' },
+          preset: {
+            type: 'object',
+            description: 'For save. Give id to update an existing preset.',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+              note: { type: 'string', description: 'One line on what it is for' },
+              mods: { type: 'object', description: 'plugin id (name@marketplace) to "on" or "off"', additionalProperties: { type: 'string', enum: ['on', 'off'] } },
+              steps: { type: 'array', items: { type: 'object', properties: { command: { type: 'string' }, args: { type: 'string' }, enabled: { type: 'boolean' } }, required: ['command'] } },
+              pins: { type: 'array', items: { type: 'string' }, description: 'Command names for the bar; leave out to keep the pins as they are' },
+            },
+            required: ['name'],
+          },
+        },
+        required: ['action'],
+      },
+    }).catch(() => {})
+    $.clock.after(1_500, () => void resumeApply($).catch(() => {})) // after the other mods have registered their commands
     void connect($).catch(() => {}) // a hub left running from an earlier session picks up again
     return r
   })
@@ -90,6 +148,22 @@ export const register: Register = (on, options) => {
     return { text: url ? `Mod Hub: ${url}` : `Mod Hub did not start: ${await read($, note)}` }
   })
 
+  // Every command the person runs, remembered for a preset's "save current setup".
+  on('command.run', async ($, e, next) => {
+    const r = await next(e)
+    if (e.origin.kind !== 'plugin') await remember($, e.command, e.args ?? '').catch(() => {})
+    return r
+  })
+
+  // Each main-thread model request restarts the prompt cache's clock.
+  on('turn.step', async function* ($, e, next) {
+    const result = yield* next(e)
+    if (!e.agentId && result.usage) await sawRequest($, result.usage.cache_read_input_tokens).catch(() => {})
+    return result
+  })
+
+  on('tool.call', { tool: 'mcp__mod-hub__mod_presets' }, async ($, e) => presetTool($, e as unknown as Record<string, unknown>))
+
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => drawPane($, e))
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
@@ -99,6 +173,7 @@ export const register: Register = (on, options) => {
     const { Box, Button, Text } = $.ui.resolve(e)
     const runnable = new Set(allCommands(s).map(c => c.name))
     const pins = (s?.pins ?? []).filter(p => runnable.has(p))
+    const cache = await cacheLine($)
     // Its own panel, bordered like context-bar's, so the buttons read as one control and not as loose text.
     const mine = (
       <Box flexDirection="column" borderStyle="round" borderColor="inactive" paddingX={1}>
@@ -112,6 +187,10 @@ export const register: Register = (on, options) => {
           {pending.length > 0 && (
             <Button key="reload" label={`↻ Reload · ${pending.length} changed`} variant="primary" onPress={() => reload($)} />
           )}
+          <Text dimColor>│</Text>
+          <Text color={cache.color} dimColor={cache.isDim}>
+            {cache.text}
+          </Text>
           <Text dimColor>│</Text>
           {pins.length > 0 ? <Text dimColor>pinned</Text> : <Text dimColor>☆ pin commands in Manage to keep them here</Text>}
           {pins.map(p => (
@@ -135,7 +214,10 @@ async function refresh($: EngineInterface) {
     $.store.get(PINS_KEY).catch(() => undefined),
   ])
   const pins = Array.isArray(stored) ? stored.filter((p): p is string => typeof p === 'string') : DEFAULT_PINS
-  await update($, state, () => build(commands, installed, enabled, pins, pending, version))
+  const presets = await loadPresets($)
+  const recent = await read($, recentAtom)
+  const at = await read($, cacheAt)
+  await update($, state, () => ({ ...build(commands, installed, enabled, pins, pending, version), presets, recent, cache: at ? { at, ttlMs, isLearned: isTtlLearned } : null }))
 }
 
 type Installed = { id: string; name: string; marketplace: string; version: string; installedAt: string; description: string }
@@ -167,7 +249,7 @@ export function build(
       isSelf: p.name === NAME,
     }))
     .sort((a, b) => Number(b.enabled) - Number(a.enabled) || a.name.localeCompare(b.name))
-  return { generatedAt: Date.now(), claudeVersion, mods, otherCommands, pins, pending: [...pendingIds] }
+  return { generatedAt: Date.now(), claudeVersion, mods, otherCommands, pins, pending: [...pendingIds], presets: [], recent: [], cache: null }
 }
 
 function allCommands(s: HubState | null) {
@@ -235,6 +317,7 @@ async function runCommand($: EngineInterface, command: string, args = '') {
   }
   // The engine runs a command started mid-turn once the turn ends: say so, so the press is not a mystery.
   if (isTurnRunning) $.ui.toast(`/${command} is queued: it runs as soon as Claude finishes this turn`)
+  if (command !== 'reload-plugins') await remember($, command, args).catch(() => {})
   await $.command.run({ command, args }).catch(async (err: unknown) => {
     await update($, note, () => `/${command} did not run: ${err instanceof Error ? err.message : String(err)}`)
   })
@@ -453,6 +536,10 @@ async function perform($: EngineInterface, a: Action) {
   else if (a.type === 'toggle' && typeof a.id === 'string' && typeof a.on === 'boolean') await toggle($, a.id, a.on)
   else if (a.type === 'reload') await reload($)
   else if (a.type === 'pins' && Array.isArray(a.pins)) await setPins($, a.pins)
+  else if (a.type === 'preset-save') await savePreset($, a.preset, 'you')
+  else if (a.type === 'preset-delete' && typeof a.id === 'string') await deletePreset($, a.id)
+  else if (a.type === 'preset-apply' && typeof a.id === 'string') await applyPreset($, a.id)
+  else if (a.type === 'preset-snapshot' && typeof a.name === 'string') await snapshotPreset($, a.name)
 }
 
 // ── The pane ──────────────────────────────────────────────────────────────
@@ -531,6 +618,7 @@ async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui'][
   const Svg = 'Svg' in elements ? elements.Svg : undefined
   const s = await read($, state)
   if (!s) return <Text dimColor>Reading your mods…</Text>
+  if ((await read($, tab)) === 'presets') return drawPresets($, e, s)
   const v = await read($, view)
   const isCompact = await read($, compact)
   const at = await read($, page)
@@ -596,6 +684,8 @@ async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui'][
           </Text>
         </Box>
         <Box flexDirection="row" columnGap={1} alignItems="center">
+          <Button key="tab-mods" label="▣ Mods" variant="primary" onPress={() => update($, tab, () => 'mods')} />
+          <Button key="tab-presets" label={`★ Presets${s.presets.length ? ` · ${s.presets.length}` : ''}`} plain onPress={() => update($, tab, () => 'presets')} />
           {changedCount > 0 && <Button key="reload" label={`↻ Reload · ${changedCount}`} variant="primary" onPress={() => reload($)} />}
           <Button key="hub" label={url ? '◈ Open Hub' : '◈ Start Hub'} onPress={() => void openHub($)} />
           <Button key="close" label="✕" plain dimColor role="dismiss" onPress={() => $.ui.close({ id: PANE })} />
@@ -737,6 +827,422 @@ async function drawPane($: EngineInterface, e: Parameters<EngineInterface['ui'][
           <Button key="next" label="Next ›" plain dimColor={p >= pages - 1} onPress={() => update($, page, n => Math.min(pages - 1, n + 1))} />
         </Box>
       )}
+    </Box>
+  )
+}
+
+// ── Recent commands ───────────────────────────────────────────────────────
+
+async function remember($: EngineInterface, command: string, args: string) {
+  const at = await $.clock.now()
+  const list = await update($, recentAtom, prev => [{ command, args: args.trim(), at }, ...prev.filter(r => !(r.command === command && r.args === args.trim()))].slice(0, MAX_RECENT))
+  await update($, state, prev => (prev ? { ...prev, recent: list } : prev))
+}
+
+// ── The prompt cache ──────────────────────────────────────────────────────
+
+async function restoreCache($: EngineInterface) {
+  if (ttlOverride !== null) {
+    ttlMs = ttlOverride
+    isTtlLearned = true
+    return
+  }
+  const known = await $.store.get(TTL_KEY).catch(() => undefined)
+  if (known === '1h') {
+    ttlMs = HOUR
+    isTtlLearned = true
+  }
+  if ((await read($, cacheAt)) > 0) startBeat($)
+}
+
+// A request finished. One that still read from the cache more than five minutes after the
+// last shows the cache lasts an hour here; that is remembered for later sessions.
+async function sawRequest($: EngineInterface, cacheRead: number) {
+  const now = await $.clock.now()
+  const prev = await read($, cacheAt)
+  if (ttlOverride === null && ttlMs < HOUR && prev > 0 && now - prev > MIN5 + 10_000 && now - prev < HOUR && cacheRead > 0) {
+    ttlMs = HOUR
+    isTtlLearned = true
+    await $.store.set(TTL_KEY, '1h').catch(() => {})
+  }
+  await update($, cacheAt, () => now)
+  await update($, state, prev2 => (prev2 ? { ...prev2, cache: { at: now, ttlMs, isLearned: isTtlLearned } } : prev2))
+  startBeat($)
+}
+
+// Ticks once a second while the cache is warm, so the bar's countdown moves; stops once it is cold.
+function startBeat($: EngineInterface) {
+  beatTimer?.cancel()
+  beatTimer = $.clock.every(1_000, () => {
+    void tickBeat($).catch(() => {})
+  })
+}
+
+async function tickBeat($: EngineInterface) {
+  const at = await read($, cacheAt)
+  if (!at || (await $.clock.now()) - at > ttlMs) {
+    beatTimer?.cancel()
+    beatTimer = undefined
+  }
+  await update($, beat, n => n + 1)
+}
+
+// The bar's cache part: how long it stays warm, or that it went cold.
+async function cacheLine($: EngineInterface): Promise<{ text: string; color?: string; isDim: boolean }> {
+  await read($, beat) // redraws each second while warm
+  const at = await read($, cacheAt)
+  if (!at) return { text: '◷ cache · no request yet', isDim: true }
+  const left = at + ttlMs - (await $.clock.now())
+  const life = ttlMs >= HOUR ? '1 h' : '5 min'
+  if (left <= 0) return { text: `◷ cache cold · next message re-reads it (${life} cache)`, isDim: true }
+  return { text: `◷ cache warm · ${countdown(left)} left`, color: left <= 60_000 ? 'warning' : 'success', isDim: false }
+}
+
+// ── Presets: storing ──────────────────────────────────────────────────────
+
+async function loadPresets($: EngineInterface): Promise<Preset[]> {
+  const raw = await $.store.get(PRESETS_KEY).catch(() => undefined)
+  const now = await $.clock.now()
+  return (Array.isArray(raw) ? raw : []).map(p => cleanPreset(p, now)).filter((p): p is Preset => p !== null && p.id !== '')
+}
+
+async function storePresets($: EngineInterface, list: Preset[]) {
+  await $.store.set(PRESETS_KEY, list).catch(() => {})
+  await update($, state, prev => (prev ? { ...prev, presets: list } : prev))
+}
+
+// Saves one (new, or by its id); returns it as stored, or null when it was not a preset.
+async function savePreset($: EngineInterface, raw: unknown, by: 'you' | 'claude'): Promise<Preset | null> {
+  const now = await $.clock.now()
+  const clean = cleanPreset(raw, now)
+  if (!clean) return null
+  const list = upsert(await loadPresets($), { ...clean, by: by === 'claude' ? 'claude' : clean.by }, now)
+  await storePresets($, list)
+  return list.find(p => p.name === clean.name && (clean.id ? p.id === clean.id : true)) ?? list.at(-1) ?? null
+}
+
+async function deletePreset($: EngineInterface, id: string) {
+  await storePresets($, (await loadPresets($)).filter(p => p.id !== id))
+  if ((await read($, editing)) === id) await update($, editing, () => '')
+}
+
+// Changes one preset in place.
+async function editPreset($: EngineInterface, id: string, change: (p: Preset) => Preset) {
+  const list = await loadPresets($)
+  const now = await $.clock.now()
+  await storePresets($, list.map(p => (p.id === id ? { ...change(p), id, updatedAt: now } : p)))
+}
+
+// The current setup, saved under a name.
+async function snapshotPreset($: EngineInterface, name: string) {
+  const s = await read($, state)
+  const clean = name.trim().slice(0, 60)
+  if (!s || !clean) {
+    $.ui.toast('Give the preset a name first')
+    return
+  }
+  const saved = await savePreset($, snapshot(clean, s.mods, s.pins, await read($, recentAtom), await $.clock.now()), 'you')
+  await update($, draftName, () => '')
+  if (saved) {
+    await update($, editing, () => saved.id)
+    $.ui.toast(`Saved preset "${saved.name}": ${summary(saved)}`)
+  }
+}
+
+// ── Presets: applying ─────────────────────────────────────────────────────
+
+// Turns its mods on or off, sets its pins, and runs its commands. A mod change needs a reload
+// first, so the commands are kept for after it and run once the mods are back.
+async function applyPreset($: EngineInterface, id: string) {
+  const s = await read($, state)
+  const preset = (await loadPresets($)).find(p => p.id === id)
+  if (!s || !preset) return
+  const { flips, steps, missing } = plan(preset, s.mods.filter(m => !m.isSelf))
+  for (const f of flips) await toggle($, f.id, f.on)
+  if (preset.pins) await setPins($, preset.pins)
+  if (missing.length) $.ui.toast(`${preset.name}: ${missing.length} of its mods are not installed here, so they were skipped`)
+  if (flips.length > 0) {
+    await $.store.set(APPLY_KEY, { id, at: await $.clock.now() }).catch(() => {})
+    $.ui.toast(`Applying ${preset.name}: reloading for ${flips.length} mod${flips.length === 1 ? '' : 's'}${steps.length ? `, then running ${steps.length} command${steps.length === 1 ? '' : 's'}` : ''}`)
+    await reload($)
+    return
+  }
+  await runSteps($, preset)
+}
+
+async function runSteps($: EngineInterface, preset: Preset) {
+  const steps = preset.steps.filter(x => x.enabled)
+  for (const step of steps) await runCommand($, step.command, step.args)
+  $.ui.toast(steps.length ? `${preset.name} applied: ran ${steps.map(x => `/${x.command}`).join(', ')}` : `${preset.name} applied`)
+}
+
+// After the reload a preset asked for: run the commands it still owes, once, if it was recent.
+async function resumeApply($: EngineInterface) {
+  const owed = (await $.store.get(APPLY_KEY).catch(() => undefined)) as { id?: string; at?: number } | undefined
+  if (!owed?.id) return
+  await $.store.delete(APPLY_KEY).catch(() => {})
+  if ((await $.clock.now()) - (owed.at ?? 0) > 120_000) return
+  const preset = (await loadPresets($)).find(p => p.id === owed.id)
+  if (preset) await runSteps($, preset)
+}
+
+// ── Presets: Claude's tool ────────────────────────────────────────────────
+
+async function presetTool($: EngineInterface, input: Record<string, unknown>) {
+  const s = await read($, state)
+  if (!s) return { deny: 'mod-hub is still reading the installed mods; try again in a moment.' }
+  const action = input.action
+  if (action === 'list') {
+    const mods = s.mods
+      .filter(m => !m.isSelf)
+      .map(m => `- ${m.id} (${m.enabled ? 'on' : 'off'})${m.commands.length ? `: ${m.commands.map(c => `/${c.name}${isToggle(c.description) ? ' [toggle]' : ''}`).join(', ')}` : ''}`)
+    const presets = s.presets.map(p => `- ${p.id} "${p.name}" by ${p.by}: ${summary(p)}`)
+    const recent = s.recent.map(r => `/${r.command}${r.args ? ` ${r.args}` : ''}`)
+    return {
+      result: [
+        `Installed mods (${s.mods.length - 1}):`,
+        ...mods,
+        '',
+        `Recently run: ${recent.length ? recent.join(', ') : 'nothing yet'}`,
+        `Pins on the bar: ${s.pins.map(x => `/${x}`).join(', ') || 'none'}`,
+        '',
+        presets.length ? `Presets (${presets.length}):` : 'No presets yet.',
+        ...presets,
+      ].join('\n'),
+    }
+  }
+  if (action === 'delete') {
+    const id = typeof input.id === 'string' ? input.id : ''
+    if (!s.presets.some(p => p.id === id)) return { deny: `No preset with id ${id}. Use action list to see them.` }
+    await deletePreset($, id)
+    return { result: `Deleted preset ${id}.` }
+  }
+  if (action === 'save') {
+    const clean = cleanPreset(input.preset, await $.clock.now())
+    if (!clean) return { deny: 'A preset needs at least a name. Mods map plugin ids to "on" or "off"; steps are { command, args, enabled }.' }
+    const ids = new Set(s.mods.map(m => m.id))
+    const unknownMods = Object.keys(clean.mods).filter(id => !ids.has(id))
+    const known = new Set([...s.mods.flatMap(m => m.commands.map(c => c.name)), ...s.otherCommands.map(c => c.name)])
+    const unknownSteps = clean.steps.filter(x => !known.has(x.command)).map(x => `/${x.command}`)
+    if (unknownMods.length) return { deny: `Not installed here: ${unknownMods.join(', ')}. Use action list for the plugin ids.` }
+    const saved = await savePreset($, clean, 'claude')
+    if (!saved) return { deny: 'That preset could not be saved.' }
+    return {
+      result:
+        `Saved preset "${saved.name}" (id ${saved.id}): ${summary(saved)}.` +
+        (unknownSteps.length ? ` Note: ${unknownSteps.join(', ')} ${unknownSteps.length === 1 ? 'is' : 'are'} not a command right now; it runs only if its mod is on when the preset is applied.` : '') +
+        ' The person applies it from ★ Presets in the Mod Manager, or the hub.',
+    }
+  }
+  return { deny: 'action must be list, save or delete' }
+}
+
+// ── Presets: the pane ─────────────────────────────────────────────────────
+
+async function drawPresets($: EngineInterface, e: Parameters<EngineInterface['ui']['resolve']>[0], s: HubState) {
+  const elements = $.ui.resolve(e)
+  const { Box, Text, Button } = elements
+  const Input = 'Input' in elements ? elements.Input : undefined
+  const open = await read($, editing)
+  const doomed = await read($, confirmDelete)
+  const name = await read($, draftName)
+  const recent = await read($, recentAtom)
+  const describe = new Map(s.mods.flatMap(m => m.commands.map(c => [c.name, c.description] as const)))
+  const known = new Set([...describe.keys(), ...s.otherCommands.map(c => c.name)])
+  const others = s.mods.filter(m => !m.isSelf)
+
+  const pill = (key: string, text: string, bg: string) => (
+    <Text key={key} backgroundColor={bg} color="inverseText" weight="semibold" size="caption">
+      {` ${text} `}
+    </Text>
+  )
+  const caption = (key: string, text: string) => (
+    <Text key={key} size="caption" weight="semibold" dimColor>
+      {text}
+    </Text>
+  )
+
+  return (
+    <Box flexDirection="column" gap={1}>
+      <Box flexDirection="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" columnGap={2}>
+        <Box flexDirection="column">
+          <Text size="title" weight="bold">
+            <Text color="claude">{'★ '}</Text>
+            {'Presets'}
+          </Text>
+          <Text size="footnote" dimColor>
+            {s.presets.length ? `${s.presets.length} saved · apply one to switch your whole setup` : 'Save a setup once, switch back to it in one press'}
+          </Text>
+        </Box>
+        <Box flexDirection="row" columnGap={1} alignItems="center">
+          <Button key="tab-mods" label="▣ Mods" plain onPress={() => update($, tab, () => 'mods')} />
+          <Button key="tab-presets" label={`★ Presets${s.presets.length ? ` · ${s.presets.length}` : ''}`} variant="primary" onPress={() => update($, tab, () => 'presets')} />
+          <Button key="close" label="✕" plain dimColor role="dismiss" onPress={() => $.ui.close({ id: PANE })} />
+        </Box>
+      </Box>
+
+      {/* New preset: the current setup under a name. */}
+      <Box flexDirection="column" borderStyle="round" borderColor="claude" paddingX={1} gap={1}>
+        <Text size="heading" weight="semibold">
+          New preset from your current setup
+        </Text>
+        <Text size="footnote" dimColor wrap="wrap">
+          {`Keeps every mod's on or off, your ${s.pins.length} pin${s.pins.length === 1 ? '' : 's'}, and the commands you ran lately${recent.length ? `: ${recent.slice(0, 6).map(r => `/${r.command}${r.args ? ` ${r.args}` : ''}`).join(', ')}` : ' (none yet: run some, or add them after)'}. Toggles go in unticked.`}
+        </Text>
+        <Box flexDirection="row" columnGap={1} alignItems="center" flexWrap="wrap">
+          {Input && <Input key="new-name" placeholder="Name it: Focus, Streaming, Everything on…" value={name} submitLabel="save" onInput={v => update($, draftName, () => v)} onSubmit={v => snapshotPreset($, v)} />}
+          <Button key="snapshot" label="★ Save current setup" variant="primary" onPress={async () => snapshotPreset($, await read($, draftName))} />
+        </Box>
+        <Text size="caption" dimColor>
+          Or ask Claude: "make me a preset for streaming with snake off". It can save presets for you; only you apply them.
+        </Text>
+      </Box>
+
+      {s.presets.length === 0 && (
+        <Box flexDirection="column" alignItems="center" borderStyle="round" borderColor="inactive" paddingY={1}>
+          <Text dimColor>No presets yet.</Text>
+        </Box>
+      )}
+
+      {s.presets.map(p => {
+        const isOpen = open === p.id
+        const { flips, steps, missing } = plan(p, others)
+        const willDo = [
+          flips.length ? `turn ${flips.filter(f => f.on).length ? `${flips.filter(f => f.on).length} on` : ''}${flips.filter(f => f.on).length && flips.filter(f => !f.on).length ? ', ' : ''}${flips.filter(f => !f.on).length ? `${flips.filter(f => !f.on).length} off` : ''} (then reload)` : '',
+          steps.length ? `run ${steps.length} command${steps.length === 1 ? '' : 's'}` : '',
+          p.pins ? 'set the pins' : '',
+        ].filter(Boolean)
+        return (
+          <Box key={`preset-${p.id}`} flexDirection="column" borderStyle="round" borderColor={isOpen ? 'claude' : 'inactive'} hover={{ borderColor: 'claude' }} paddingX={1}>
+            <Box flexDirection="row" justifyContent="space-between" alignItems="center" columnGap={1} flexWrap="wrap">
+              <Box flexDirection="row" columnGap={1} alignItems="center">
+                <Text size="heading" weight="semibold">
+                  {p.name}
+                </Text>
+                {p.by === 'claude' && pill(`by-${p.id}`, 'BY CLAUDE', 'suggestion')}
+              </Box>
+              <Box flexDirection="row" columnGap={1} alignItems="center">
+                <Button key={`apply-${p.id}`} label="▶ Apply" variant="primary" onPress={() => applyPreset($, p.id)} />
+                <Button key={`edit-${p.id}`} label={isOpen ? '✓ Done' : '✎ Edit'} plain onPress={() => update($, editing, cur => (cur === p.id ? '' : p.id))} />
+                <Button key={`copy-${p.id}`} label="⧉" plain dimColor onPress={() => savePreset($, { ...p, id: '', name: `${p.name} copy`, by: 'you' }, 'you')} />
+                <Button
+                  key={`delete-${p.id}`}
+                  label={doomed === p.id ? 'Press again to delete' : '✕'}
+                  plain={doomed === p.id ? undefined : true}
+                  variant={doomed === p.id ? 'primary' : undefined}
+                  dimColor={doomed !== p.id}
+                  onPress={async () => {
+                    if ((await read($, confirmDelete)) === p.id) {
+                      await deletePreset($, p.id)
+                      await update($, confirmDelete, () => '')
+                    } else await update($, confirmDelete, () => p.id)
+                  }}
+                />
+              </Box>
+            </Box>
+            {p.note !== '' && (
+              <Text size="footnote" dimColor wrap="wrap">
+                {p.note}
+              </Text>
+            )}
+            <Text size="footnote" wrap="wrap">
+              {summary(p)}
+            </Text>
+            <Text size="caption" dimColor wrap="wrap">
+              {willDo.length ? `Applying now would ${willDo.join(', ')}.` : 'Applying now changes nothing: everything already matches.'}
+              {missing.length ? ` ${missing.length} of its mods are not installed here.` : ''}
+            </Text>
+
+            {isOpen && (
+              <Box flexDirection="column" gap={1} paddingTop={1}>
+                {Input && (
+                  <Input key={`rename-${p.id}`} label="Name" placeholder="Preset name" value={p.name} submitLabel="rename" onSubmit={v => editPreset($, p.id, x => ({ ...x, name: v.trim() || x.name }))} />
+                )}
+                {Input && <Input key={`note-${p.id}`} label="Note" placeholder="What it is for (optional)" value={p.note} submitLabel="save" onSubmit={v => editPreset($, p.id, x => ({ ...x, note: v.slice(0, 300) }))} />}
+
+                {caption(`cap-mods-${p.id}`, 'MODS  ·  leave as is, or turn on or off when applied')}
+                {others.map(m => {
+                  const want = p.mods[m.id]
+                  const set = (v: 'on' | 'off' | undefined) =>
+                    editPreset($, p.id, x => {
+                      const mods = { ...x.mods }
+                      if (v) mods[m.id] = v
+                      else delete mods[m.id]
+                      return { ...x, mods }
+                    })
+                  return (
+                    <Box key={`pm-${p.id}-${m.id}`} flexDirection="row" columnGap={1} alignItems="center">
+                      <Button key={`pm-leave-${m.id}`} label="·" variant={!want ? 'primary' : undefined} plain={want ? true : undefined} dimColor={!!want} onPress={() => set(undefined)} />
+                      <Button key={`pm-on-${m.id}`} label="On" variant={want === 'on' ? 'primary' : undefined} plain={want === 'on' ? undefined : true} dimColor={want !== 'on'} onPress={() => set('on')} />
+                      <Button key={`pm-off-${m.id}`} label="Off" variant={want === 'off' ? 'primary' : undefined} plain={want === 'off' ? undefined : true} dimColor={want !== 'off'} onPress={() => set('off')} />
+                      <Text weight={want ? 'semibold' : undefined} dimColor={!want}>
+                        {m.name}
+                      </Text>
+                      <Text size="caption" dimColor>{m.enabled ? 'now on' : 'now off'}</Text>
+                    </Box>
+                  )
+                })}
+
+                {caption(`cap-steps-${p.id}`, 'COMMANDS  ·  run in order when applied')}
+                {p.steps.length === 0 && <Text size="footnote" dimColor>None yet. Add one below.</Text>}
+                {p.steps.map((step, i) => {
+                  const toggleLike = isToggle(describe.get(step.command) ?? '')
+                  const move = (to: number) =>
+                    editPreset($, p.id, x => {
+                      const list = [...x.steps]
+                      const [one] = list.splice(i, 1)
+                      list.splice(Math.max(0, Math.min(list.length, to)), 0, one!)
+                      return { ...x, steps: list }
+                    })
+                  return (
+                    <Box key={`ps-${p.id}-${i}`} flexDirection="row" columnGap={1} alignItems="center" flexWrap="wrap">
+                      <Button key={`ps-tick-${i}`} label={step.enabled ? '☑' : '☐'} plain onPress={() => editPreset($, p.id, x => ({ ...x, steps: x.steps.map((y, j) => (j === i ? { ...y, enabled: !y.enabled } : y)) }))} />
+                      <Text mono dimColor={!step.enabled}>{`/${step.command}${step.args ? ` ${step.args}` : ''}`}</Text>
+                      {toggleLike && pill(`ps-tg-${i}`, '⇄ TOGGLE', 'warning')}
+                      {!known.has(step.command) && pill(`ps-nk-${i}`, 'NOT A COMMAND NOW', 'error')}
+                      <Button key={`ps-up-${i}`} label="↑" plain dimColor onPress={() => move(i - 1)} />
+                      <Button key={`ps-down-${i}`} label="↓" plain dimColor onPress={() => move(i + 1)} />
+                      <Button key={`ps-rm-${i}`} label="✕" plain dimColor onPress={() => editPreset($, p.id, x => ({ ...x, steps: x.steps.filter((_, j) => j !== i) }))} />
+                    </Box>
+                  )
+                })}
+                {Input && (
+                  <Input
+                    key={`add-${p.id}`}
+                    placeholder="Add a command: cache-clock setup, heatmap, mission code…"
+                    submitLabel="add"
+                    onSubmit={v => {
+                      const [command = '', ...rest] = v.trim().replace(/^\//, '').split(/\s+/)
+                      if (!command) return
+                      return editPreset($, p.id, x => ({ ...x, steps: [...x.steps, { command, args: rest.join(' '), enabled: !isToggle(describe.get(command) ?? '') }].slice(0, 20) }))
+                    }}
+                  />
+                )}
+                {recent.length > 0 && (
+                  <Box flexDirection="row" columnGap={1} flexWrap="wrap" alignItems="center">
+                    {caption(`cap-recent-${p.id}`, 'RECENT')}
+                    {recent.slice(0, 8).map(r => (
+                      <Button
+                        key={`add-recent-${p.id}-${r.command}-${r.args}`}
+                        label={`+ /${r.command}${r.args ? ` ${r.args}` : ''}`}
+                        plain
+                        onPress={() => editPreset($, p.id, x => ({ ...x, steps: [...x.steps, { command: r.command, args: r.args, enabled: !isToggle(describe.get(r.command) ?? '') }].slice(0, 20) }))}
+                      />
+                    ))}
+                  </Box>
+                )}
+
+                {caption(`cap-pins-${p.id}`, 'PINS ON THE BAR')}
+                <Box flexDirection="row" columnGap={1} alignItems="center" flexWrap="wrap">
+                  <Button key={`pins-keep-${p.id}`} label="Leave as they are" variant={p.pins === null ? 'primary' : undefined} plain={p.pins === null ? undefined : true} onPress={() => editPreset($, p.id, x => ({ ...x, pins: null }))} />
+                  <Button key={`pins-now-${p.id}`} label={`Use my current pins (${s.pins.length})`} variant={p.pins !== null ? 'primary' : undefined} plain={p.pins !== null ? undefined : true} onPress={() => editPreset($, p.id, x => ({ ...x, pins: [...s.pins] }))} />
+                  {p.pins !== null && <Text size="footnote" dimColor>{p.pins.length ? p.pins.map(x => `/${x}`).join(' ') : 'clears the pins'}</Text>}
+                </Box>
+              </Box>
+            )}
+          </Box>
+        )
+      })}
     </Box>
   )
 }

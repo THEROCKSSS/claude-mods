@@ -2,7 +2,7 @@ import { describe, expect, mock, test } from 'claude-code/testing'
 
 import { edges, fit, importsOf, layout, svg, titleOf, wrap } from '../hooks/map'
 import { label, lines, summary } from '../hooks/tree'
-import { cap, resetBandOrder } from '../hooks/register'
+import { cap, paneMap, resetBandOrder } from '../hooks/register'
 
 let mockClock: any
 const PANE = { component: 'Pane', requestId: 'mission-control-win', props: { title: 'Mission Control', isFocused: true, bodyColumns: 100, placement: 'dock', scroll: { offset: 0, bodyRows: 30 } } }
@@ -203,6 +203,12 @@ describe('mission-control', () => {
     const root: any = await band.drawn()
     expect(root.children.map((c: any) => c.props.key)).toEqual(['band:where-am-i', 'band:mission-control-win'])
     await band.unmount()
+  })
+
+  test('the desktop map takes the size of the pane: a narrow pane gets a tall map, never a thumbnail', () => {
+    expect(paneMap(48, 40)).toEqual({ width: 394, height: 493 }) // the docked pane in the app
+    expect(paneMap(160, 40)).toEqual({ width: 1312, height: 760 }) // wide: capped by the rows
+    expect(paneMap(10, 10).width).toBe(340) // never smaller than readable
   })
 
   test('the desktop draws the code map as an Svg, from Windows paths, with no Chrome', async ($, on) => {

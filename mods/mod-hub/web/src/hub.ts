@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 
 import type { ModLogic } from '../../../mod-logic/shared/logic'
+import type { Preset, RecentCommand } from '../../shared/presets'
 
 export type ModRow = {
   id: string
@@ -23,16 +24,33 @@ export type HubState = {
   otherCommands: { name: string; description: string; source: string }[]
   pins: string[]
   pending: string[]
+  presets: Preset[]
+  recent: RecentCommand[]
+  cache: { at: number; ttlMs: number; isLearned: boolean } | null
 }
 
 // What mod-logic sends: every mod read off its source, and the last edit that changed one.
 export type LogicFeed = { mods: ModLogic[]; changed: { mod: string; file: string; at: number } | null }
+
+// What mission-control-win sends: the live tree, the files on the map, and the map itself.
+export type MissionFeed = {
+  at: number
+  turn: number
+  summary: { agents: number; running: number; tools: number; failed: number }
+  lines: { prefix: string; text: string; status: 'running' | 'done' | 'failed'; kind: 'main' | 'agent' | 'tool'; family: string }[]
+  files: { path: string; act: string; changed: boolean; why: string }[]
+  svg: string
+}
 
 export type Action =
   | { type: 'run'; command: string; args?: string }
   | { type: 'toggle'; id: string; on: boolean }
   | { type: 'reload' }
   | { type: 'pins'; pins: string[] }
+  | { type: 'preset-save'; preset: Preset }
+  | { type: 'preset-delete'; id: string }
+  | { type: 'preset-apply'; id: string }
+  | { type: 'preset-snapshot'; name: string }
 
 // The mod sends its state at least every ~10 s while the session runs; past this, the page says so.
 const STALE_MS = 25_000
@@ -46,6 +64,7 @@ export function useHub() {
   const [stateAt, setStateAt] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
   const [graph, setGraph] = useState<LogicFeed | null>(null)
+  const [mission, setMission] = useState<MissionFeed | null>(null)
   const now = useNow(5_000)
 
   useEffect(() => {
@@ -55,10 +74,13 @@ export function useHub() {
     source.onerror = () => setIsOpen(false) // EventSource retries by itself
     source.onmessage = ev => {
       try {
-        const msg = JSON.parse(ev.data) as { state: HubState | null; stateAt: number; graph?: LogicFeed | null }
+        const msg = JSON.parse(ev.data) as { state: HubState | null; stateAt: number; graph?: LogicFeed | null; mission?: MissionFeed | null }
         if (msg.graph) setGraph(msg.graph)
+        if (msg.mission) setMission(msg.mission)
         if (msg.state) {
-          setState(msg.state)
+          // An older mod-hub sends no presets, recent commands or cache: start those empty.
+          const sent = msg.state as Partial<HubState> & Omit<HubState, 'presets' | 'recent' | 'cache'>
+          setState({ ...sent, presets: sent.presets ?? [], recent: sent.recent ?? [], cache: sent.cache ?? null })
           setStateAt(msg.stateAt)
         }
       } catch {
@@ -78,7 +100,7 @@ export function useHub() {
   }, [])
 
   const link: Link = !isOpen ? (state ? 'offline' : 'connecting') : !state ? 'connecting' : now - stateAt > STALE_MS ? 'stale' : 'live'
-  return { state, stateAt, graph, link, send, hasToken: token !== '' && token !== '__MOD_HUB_TOKEN__' }
+  return { state, stateAt, graph, mission, link, send, hasToken: token !== '' && token !== '__MOD_HUB_TOKEN__' }
 }
 
 // The time, moved on every `ms`, for "updated 4 s ago" and staleness.
@@ -92,9 +114,11 @@ export function useNow(ms: number) {
 }
 
 // The hash route: #/ for the hub, #/mod/<id> for one mod. Bookmarks and reloads land where they were.
-export type Route = { name: 'home' } | { name: 'mod'; id: string } | { name: 'logic'; id: string }
+export type Route = { name: 'home' } | { name: 'mod'; id: string } | { name: 'logic'; id: string } | { name: 'presets' } | { name: 'mission' }
 
 function readRoute(): Route {
+  if (/^#\/presets\/?$/.test(location.hash)) return { name: 'presets' }
+  if (/^#\/mission\/?$/.test(location.hash)) return { name: 'mission' }
   const logic = location.hash.match(/^#\/logic(?:\/(.+))?$/)
   if (logic) return { name: 'logic', id: logic[1] ? decodeURIComponent(logic[1]) : '' }
   const m = location.hash.match(/^#\/mod\/(.+)$/)

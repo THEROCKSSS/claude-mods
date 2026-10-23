@@ -4,10 +4,10 @@ Mods for [Claude Code](https://claude.com/claude-code): a manager for all your m
 
 | Mod | What it does |
 | --- | --- |
-| **mod-hub** | A bar above the prompt with **⚙ Manage**, **◈ Hub** and your pinned commands. `/mod-manager` opens a pane to turn mods on and off, run or copy their commands, and pin them to the bar, with filters (on, off, pinned, changed, new), sorting, search and a compact view. `/hub` opens a web control room on `127.0.0.1:8796`: a 3D map of your mods, switches, a Ctrl+K palette for every slash command, and a page per mod. Any mod you install appears by itself. |
+| **mod-hub** | A bar above the prompt with **⚙ Manage**, **◈ Hub**, a **prompt-cache countdown** ("◷ cache warm · 3:42 left", learns 5 min or 1 h) and your pinned commands. `/mod-manager` turns mods on and off, runs or copies their commands, pins them, and saves **presets**: named setups (mods on or off, pins, commands to run) you apply in one press. Claude can make presets for you through its `mod_presets` tool; only you apply them. `/hub` opens a web control room on `127.0.0.1:8796` with Mods, Presets, Logic graph and Mission pages. |
 | **mod-logic** | `/mod-logic` reads every mod's source and shows how it works: the events it hooks, the capabilities it calls (coloured by risk: runs programs, uses the network, writes files, drives Claude…) and what it registers. A 2D map in the pane, and 2D or 3D in the hub. Live: edit a mod and its part of the graph redraws within a second. It also flags guards that fail open. |
 | **blast-radius-win** | Windows fork of [hamzafer's blast-radius](https://github.com/hamzafer/claude-code-mods). Holds recursive deletes, force pushes and migrations from the Bash **and PowerShell** tools, shows what they would change, and blocks the command if the guard itself fails. |
-| **mission-control-win** | Windows fork of hamzafer's mission-control. `/mission` opens the live map of agents and tool calls; `/mission code` draws the code map right in the desktop app. |
+| **mission-control-win** | Windows fork of hamzafer's mission-control. `/mission` opens the live map of agents and tool calls; `/mission code` draws a readable code map in the desktop app, and **↗ Browser** shows both full size on the hub's Mission page. |
 
 ## Install
 
@@ -51,11 +51,11 @@ cd mods/mod-hub/web && npm ci && npm run build   # writes mods/mod-hub/app
 
 | Suite | Result |
 | --- | --- |
-| mod-hub | 10/10 |
+| mod-hub | 16/16 |
 | mod-logic | 5/5 |
-| hub server | 8/8 |
+| hub server | 10/10 |
 | blast-radius-win | 20/20 |
-| mission-control-win | 7/9. The same 2 tests fail on unmodified upstream with this engine (terminal PNG path, band order). |
+| mission-control-win | 8/10. The same 2 tests fail on unmodified upstream with this engine (terminal PNG path, band order). |
 
 ## License
 

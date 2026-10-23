@@ -1,6 +1,6 @@
 {
   "name": "mission-control-win",
-  "version": "0.1.3-win.1",
+  "version": "0.1.3-win.2",
   "description": "Windows fork of mission-control: /mission opens a live map of the main agent, its subagents and every tool call, and a code map the desktop app draws itself.",
   "author": {
     "name": "Hamza Zafar (fork for Windows)",

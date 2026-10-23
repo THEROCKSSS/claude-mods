@@ -1,7 +1,7 @@
 {
   "name": "mod-hub",
-  "version": "0.1.0",
-  "description": "A bar above the prompt with your pinned mod commands, a /mod-manager pane to turn mods on and off and run their commands, and /hub: a live web control room for every mod.",
+  "version": "0.2.0",
+  "description": "A bar above the prompt with your pinned commands and a prompt-cache countdown, a /mod-manager pane to turn mods on and off, run them and save presets of your setup, and /hub: a live web control room for every mod.",
   "author": {
     "name": "Owen (THEROCKSSS)",
     "url": "https://github.com/THEROCKSSS"
@@ -22,6 +22,17 @@
       "title": "Show the bar above the prompt",
       "description": "The row of pinned commands and the Mods and Hub buttons. Off hides it; /mod-manager and /hub still work.",
       "default": true
+    },
+    "cacheTtl": {
+      "type": "string",
+      "title": "Prompt cache lifetime",
+      "description": "auto learns it from your requests (5 min until one shows it lasts an hour). Set 5m or 1h to fix it.",
+      "default": "auto",
+      "options": [
+        "auto",
+        "5m",
+        "1h"
+      ]
     }
   }
 }

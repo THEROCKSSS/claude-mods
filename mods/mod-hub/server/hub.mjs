@@ -16,7 +16,7 @@ const MAX_BODY = 1_000_000
 const MAX_ACTIONS = 200
 // Bumped whenever the API changes. The mod compares it with its own and replaces an older hub
 // left running from before an update, which would otherwise keep serving the old API.
-export const SERVER_VERSION = 2
+export const SERVER_VERSION = 3
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2', '.json': 'application/json', '.ico': 'image/x-icon' }
 
 export function parseArgs(argv) {
@@ -38,6 +38,10 @@ export function cleanAction(a) {
   }
   if (a.type === 'toggle' && typeof a.id === 'string' && /^[\w.:@-]{1,200}$/.test(a.id) && typeof a.on === 'boolean') return { type: 'toggle', id: a.id, on: a.on }
   if (a.type === 'reload') return { type: 'reload' }
+  // Presets: the mod checks a saved preset's every field again (shared/presets.ts cleanPreset).
+  if (a.type === 'preset-save' && a.preset && typeof a.preset === 'object' && JSON.stringify(a.preset).length <= 20_000) return { type: 'preset-save', preset: a.preset }
+  if ((a.type === 'preset-delete' || a.type === 'preset-apply') && typeof a.id === 'string' && /^[\w-]{1,60}$/.test(a.id)) return { type: a.type, id: a.id }
+  if (a.type === 'preset-snapshot' && typeof a.name === 'string' && a.name.trim() && a.name.length <= 60) return { type: 'preset-snapshot', name: a.name.trim() }
   if (a.type === 'pins' && Array.isArray(a.pins) && a.pins.length <= 12 && a.pins.every(p => typeof p === 'string' && /^[\w:.-]{1,64}$/.test(p))) return { type: 'pins', pins: a.pins }
   return null
 }
@@ -48,6 +52,7 @@ export function startHub({ port, dir, app, token = randomBytes(24).toString('hex
   let stateAt = 0
   let graph = null // mod-logic's reading of every mod, for the #/logic view
   let graphAt = 0
+  let mission = null // mission-control-win's live tree and code map, for the #/mission view
   let seq = 0
   const actions = []
   const listeners = new Set()
@@ -59,7 +64,7 @@ export function startHub({ port, dir, app, token = randomBytes(24).toString('hex
     res.end(typeof body === 'string' ? body : JSON.stringify(body))
   }
   const broadcast = () => {
-    const data = `data: ${JSON.stringify({ state, stateAt, graph, graphAt })}\n\n`
+    const data = `data: ${JSON.stringify({ state, stateAt, graph, graphAt, mission })}\n\n`
     for (const res of listeners) res.write(data)
   }
   const readBody = req =>
@@ -118,9 +123,21 @@ export function startHub({ port, dir, app, token = randomBytes(24).toString('hex
         }
       }
       if (url.pathname === '/api/graph' && req.method === 'GET') return send(res, 200, { graph, graphAt })
+      if (url.pathname === '/api/mission' && req.method === 'POST') {
+        try {
+          const body = JSON.parse(await readBody(req))
+          if (!body || !Array.isArray(body.lines) || typeof body.svg !== 'string' || !body.svg.startsWith('<svg')) return send(res, 400, { error: 'bad mission' })
+          mission = body
+          broadcast()
+          return send(res, 200, { ok: true })
+        } catch {
+          return send(res, 400, { error: 'bad mission' })
+        }
+      }
+      if (url.pathname === '/api/mission' && req.method === 'GET') return send(res, 200, { mission })
       if (url.pathname === '/api/events' && req.method === 'GET') {
         res.writeHead(200, { 'content-type': 'text/event-stream', 'cache-control': 'no-store', connection: 'keep-alive' })
-        res.write(`data: ${JSON.stringify({ state, stateAt, graph, graphAt })}\n\n`)
+        res.write(`data: ${JSON.stringify({ state, stateAt, graph, graphAt, mission })}\n\n`)
         listeners.add(res)
         const beat = setInterval(() => res.write(': beat\n\n'), 15_000)
         req.on('close', () => {

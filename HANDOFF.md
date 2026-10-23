@@ -23,6 +23,15 @@ Four mods, all validated and tested. See README for what each does and AGENTS.md
 - **Two bugs fixed.** A hub left running across an update kept serving the old API, so the server is now versioned and mod-hub replaces an old one. The graph never reached a hub opened after the session started, so mod-logic now resends every 10 s to a hub that has not had it.
 - **Both panels redesigned:** title typography, a status or risk SVG strip, a toolbar card, cards that light on hover, and pill badges.
 
+## Presets, cache timer, Mission page (2026-10-23)
+
+- **mod-hub 0.2.0** adds:
+  - **Presets:** they live in `shared/presets.ts`. The pane has a Presets tab, the hub a `#/presets` page, and Claude a `mod_presets` tool (list, save and delete; never apply).
+  - **Applying a preset that flips mods:** it reloads first, and the owed commands run 1.5 s after `session.start`, from `pendingApply` in the store.
+  - **The cache countdown in the bar and the hub header:** fed by `turn.step` usage. It learns a 1 h lifetime when a request more than 5 min after the last still reads the cache.
+  - **The Mission feed:** the server is version 3 and accepts `POST /api/mission`.
+- **mission-control-win 0.1.3-win.2:** the desktop map is drawn at the pane's own size, with a ↗ Browser button. It pushes its tree and a 1400×860 map to the hub every 2 s when something changed.
+
 ## Known gaps
 
 - mission-control-win: 2 of 9 tests fail, the same 2 as upstream on engine 2.1.308.

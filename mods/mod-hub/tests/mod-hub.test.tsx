@@ -39,7 +39,7 @@ function engine(on: any, hub: { actions: unknown[]; version?: number; shutdowns?
   on('command.list', () => ({ value: COMMANDS }))
   on('command.run', (_$: any, e: any) => (ran.push({ command: e.command, args: e.args }), { text: 'ok' }))
   on('session.version', () => ({ value: { version: '2.1.308' } }))
-  on('settings.read', () => ({ value: { 'snake@claude-code-mods': true } }))
+  on('settings.read', () => ({ value: { enabledPlugins: { 'snake@claude-code-mods': true } } }))
   on('env.get', (_$: any, e: any) => ({ value: e.name === 'USERPROFILE' ? 'C:\\Users\\me' : e.name === 'CLAUDE_CODE_EXECPATH' ? 'C:\\claude\\claude.exe' : undefined }))
   on('fs.read', (_$: any, e: any) => {
     const p = fwd(e.path)
@@ -56,8 +56,8 @@ function engine(on: any, hub: { actions: unknown[]; version?: number; shutdowns?
   on('process.run', (_$: any, e: any) => (runs.push(e.argv), stdins.push(e.init?.stdin), { value: { exitCode: 0, stdout: '', stderr: '' } }))
   on('ui.copy', () => ({ value: { isCopied: false, reason: 'no-clipboard' } })) // the desktop has no clipboard path yet
   on('http.fetch', (_$: any, e: any) => {
-    if (e.url.endsWith('/api/ping')) return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify({ ok: true, app: 'mod-hub', pid: 1, version: hub.version ?? 2 }) } }
-    if (e.url.endsWith('/api/shutdown')) return (hub.shutdowns = (hub.shutdowns ?? 0) + 1, (hub.version = 2), { value: { status: 200, ok: true, headers: {}, text: '{"ok":true}' } })
+    if (e.url.endsWith('/api/ping')) return { value: { status: 200, ok: true, headers: {}, text: JSON.stringify({ ok: true, app: 'mod-hub', pid: 1, version: hub.version ?? 3 }) } }
+    if (e.url.endsWith('/api/shutdown')) return (hub.shutdowns = (hub.shutdowns ?? 0) + 1, (hub.version = 3), { value: { status: 200, ok: true, headers: {}, text: '{"ok":true}' } })
     if (e.url.includes('/api/state')) return (posted.push(JSON.parse(e.init?.body ?? 'null')), { value: { status: 200, ok: true, headers: {}, text: '{}' } })
     if (e.url.includes('/api/actions')) {
       const after = Number(new URL(e.url).searchParams.get('after'))

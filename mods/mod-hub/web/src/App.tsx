@@ -12,6 +12,9 @@ import { ModCard } from './ModCard'
 import { LoadGuard } from './LoadGuard'
 import { Logic } from './Logic'
 import { Palette } from './Palette'
+import { Mission } from './Mission'
+import { Presets } from './Presets'
+import { countdown } from '../../shared/presets'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
 import { cleanView, counts, DEFAULT_VIEW, FILTERS, isDefault, SORTS, sources, viewMods, type View } from '../../shared/view'
 
@@ -19,7 +22,7 @@ import { cleanView, counts, DEFAULT_VIEW, FILTERS, isDefault, SORTS, sources, vi
 const Constellation = lazy(() => import('./Constellation').then(m => ({ default: m.Constellation })))
 
 export function App() {
-  const { state, stateAt, graph, link, send, hasToken } = useHub()
+  const { state, stateAt, graph, mission, link, send, hasToken } = useHub()
   const route = useRoute()
   const [view, setView] = useStoredView()
   const [highlight, setHighlight] = useState<string | null>(null)
@@ -70,6 +73,10 @@ export function App() {
         <Notice title="Waiting for Claude Code…">
           The hub is running, but no session has reported in yet. A Claude Code session with mod-hub installed connects within 15 seconds; /hub connects it at once.
         </Notice>
+      ) : route.name === 'mission' ? (
+        <Mission feed={mission} />
+      ) : route.name === 'presets' ? (
+        <Presets state={state} act={act} />
       ) : route.name === 'logic' ? (
         <Logic feed={graph} focusId={route.id} />
       ) : route.name === 'mod' ? (
@@ -115,6 +122,7 @@ function Header({ link, stateAt, state, onPalette, onReload }: { link: Link; sta
             {stateAt ? `Heard from Claude Code ${Math.max(0, Math.round((now - stateAt) / 1000))} s ago` : 'Not heard from Claude Code yet'}
             {state?.claudeVersion ? ` · ${state.claudeVersion}` : ''}
           </div>
+          <CacheTimer cache={state?.cache ?? null} now={now} />
         </div>
         {state && state.pending.length > 0 && (
           <Button onClick={onReload} className="bg-brass text-primary-foreground hover:bg-brass/90">
@@ -371,7 +379,7 @@ function useStoredView(): [View, (change: Partial<View>) => void] {
 }
 
 // Mods and Logic: the hub's two places, each its own route.
-function Nav({ route }: { route: 'home' | 'mod' | 'logic' }) {
+function Nav({ route }: { route: 'home' | 'mod' | 'logic' | 'presets' | 'mission' }) {
   const tab = (href: string, label: string, isOn: boolean) => (
     <a
       href={href}
@@ -383,8 +391,23 @@ function Nav({ route }: { route: 'home' | 'mod' | 'logic' }) {
   )
   return (
     <nav className="mt-4 flex gap-1" aria-label="Hub">
-      {tab('#/', 'Mods', route !== 'logic')}
+      {tab('#/', 'Mods', route === 'home' || route === 'mod')}
+      {tab('#/presets', 'Presets', route === 'presets')}
       {tab('#/logic', 'Logic graph', route === 'logic')}
+      {tab('#/mission', 'Mission', route === 'mission')}
     </nav>
+  )
+}
+
+// How long the prompt cache stays warm after Claude Code's last request: warm, the last minute, cold.
+function CacheTimer({ cache, now }: { cache: { at: number; ttlMs: number; isLearned: boolean } | null; now: number }) {
+  if (!cache) return <div className="mt-1 text-xs text-muted-foreground">◷ cache · no request yet</div>
+  const left = cache.at + cache.ttlMs - now
+  const life = cache.ttlMs >= 3_600_000 ? '1 h' : '5 min'
+  const tone = left <= 0 ? 'text-muted-foreground' : left <= 60_000 ? 'text-brass' : 'text-sage'
+  return (
+    <div className={`mt-1 text-xs font-medium tabular-nums ${tone}`} title={`A ${life} prompt cache${cache.isLearned ? '' : ' (assumed until a request shows it lasts longer)'}`}>
+      {left > 0 ? `◷ cache warm · ${countdown(left)} left` : `◷ cache cold · next message re-reads it`}
+    </div>
   )
 }

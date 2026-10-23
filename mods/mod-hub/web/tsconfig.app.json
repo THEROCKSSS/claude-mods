@@ -14,5 +14,5 @@
     "paths": { "@/*": ["./src/*"] },
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"
   },
-  "include": ["src", "../shared/view.ts", "../../mod-logic/shared/logic.ts"]
+  "include": ["src", "../shared/view.ts", "../shared/presets.ts", "../../mod-logic/shared/logic.ts"]
 }

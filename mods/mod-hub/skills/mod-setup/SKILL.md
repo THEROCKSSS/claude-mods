@@ -41,6 +41,16 @@ Engine rules that fail silently on Windows:
 - **Missing tools.** `sleep`, `grep`, `ps`, `tail` and `lsof` are not on Windows' PATH, and `bash` there is WSL's. Use `$.clock.sleep`, `$.fs` and `$.http` instead. Run Git Bash by its absolute path (`C:/Program Files/Git/bin/bash.exe`) when a shell is unavoidable.
 - **Backslash paths.** `$.fs` hands paths to the layer below with backslashes. Tests that compare paths should normalize them.
 
+## Presets
+
+When the person asks for a preset ("a preset for streaming", "save my setup"), use the `mod_presets` tool:
+
+1. Run `list` first, for the plugin ids, each mod's commands (toggles are marked) and the recent commands.
+2. Then `save` with a name, a one-line note, `mods` (only the ones to change, as id → on/off), `steps` (commands in order; toggles `enabled: false` unless asked) and `pins` if they asked for pins.
+3. Tell them it's under ★ Presets in `/mod-manager` and on the hub. They apply it; you never do.
+
+*Done when* `list` shows the new preset with the summary you meant.
+
 ## Mod Hub internals (for changes to mod-hub itself)
 
 - `server/hub.mjs` serves `app/` and queues actions. It never runs anything. The mod polls `/api/actions`, checks each action against what is installed, and runs it. Keep the token, Host and Origin checks: `node --test server/hub.test.mjs`.

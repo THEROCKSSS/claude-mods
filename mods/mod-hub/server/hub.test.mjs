@@ -91,6 +91,15 @@ test('the logic graph goes in and out, and needs the token', async () => {
   assert.deepEqual((await call('/api/graph', { headers: t })).json().graph, { mods: [{ id: 'a@b', hooks: [] }], changed: { mod: 'a@b', file: 'x', at: 1 } })
 })
 
+test('the mission feed goes in and out, needs the token, and must be an svg', async () => {
+  const t = { 'x-mod-hub-token': hub.token, 'content-type': 'application/json' }
+  const body = { at: 1, turn: 2, summary: { agents: 0, running: 0, tools: 1, failed: 0 }, lines: [{ prefix: '◆ ', text: 'main' }], files: [], svg: '<svg></svg>' }
+  assert.equal((await call('/api/mission', { method: 'POST', body })).status, 401)
+  assert.equal((await call('/api/mission', { method: 'POST', headers: t, body: { ...body, svg: '<script>' } })).status, 400)
+  assert.equal((await call('/api/mission', { method: 'POST', headers: t, body })).status, 200)
+  assert.equal((await call('/api/mission', { headers: t })).json().mission.turn, 2)
+})
+
 test('ping says the server version; shutdown needs the token', async () => {
   const ping = (await call('/api/ping')).json()
   assert.equal(ping.version, SERVER_VERSION)
@@ -99,6 +108,15 @@ test('ping says the server version; shutdown needs the token', async () => {
   assert.equal((await call('/api/shutdown', { method: 'POST', headers: { 'x-mod-hub-token': hub.token } })).status, 200)
   await new Promise(done => setTimeout(done, 80))
   assert.equal(stopped, 1)
+})
+
+test('cleanAction keeps the preset actions, within bounds', () => {
+  assert.deepEqual(cleanAction({ type: 'preset-apply', id: 'focus-2' }), { type: 'preset-apply', id: 'focus-2' })
+  assert.equal(cleanAction({ type: 'preset-apply', id: '../x' }), null)
+  assert.deepEqual(cleanAction({ type: 'preset-snapshot', name: '  Streaming ' }), { type: 'preset-snapshot', name: 'Streaming' })
+  assert.equal(cleanAction({ type: 'preset-snapshot', name: '' }), null)
+  assert.equal(cleanAction({ type: 'preset-save', preset: { name: 'x'.repeat(30_000) } }), null)
+  assert.deepEqual(cleanAction({ type: 'preset-save', preset: { name: 'Focus' } }), { type: 'preset-save', preset: { name: 'Focus' } })
 })
 
 test('cleanAction keeps only the four shapes', () => {
